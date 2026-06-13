@@ -195,8 +195,14 @@ taskkill /F /PID 12345
 # 查看后端状态（确认服务已启动）
 agent-me status
 
+# 交互式配置 API Key（选择厂商 → 输入 Key → 保存）
+agent-me config
+
 # 查看已配置的提供商列表
 agent-me config list
+
+# 测试连接
+agent-me config test openai
 
 # 配置 API Key（交互式输入，输入时隐藏不显示）
 agent-me config set openai

@@ -963,9 +963,12 @@ def tasks():
             console.print(f"[red]错误: {e}[/]")
 
 
-@cli.group()
+@cli.group(invoke_without_command=True)
 def config():
     """配置管理"""
+    ctx = click.get_current_context()
+    if ctx.invoked_subcommand is None:
+        _interactive_config()
 
 
 @config.command("list")
@@ -977,6 +980,9 @@ def config_list():
         try:
             r = _api_get(client, "/config/providers")
             providers = r.json() if r.status_code == 200 else []
+            if not providers:
+                console.print("[dim]没有获取到提供商信息[/]")
+                return
             table = Table(title="LLM 提供商", box=ROUNDED)
             table.add_column("ID", style="dim")
             table.add_column("名称")
@@ -991,34 +997,79 @@ def config_list():
             console.print(f"[red]错误: {e}[/]")
 
 
-@config.command("set")
-@click.argument("provider")
-@click.option("--key", "-k", default="", help="API Key（省略则交互式输入）")
-@click.option("--default", is_flag=True, help="设为默认")
-def config_set(provider, key, default):
-    """配置提供商 API Key（-k 省略时交互式输入，不显示明文）"""
+def _interactive_config():
+    """交互式配置：列出提供商→选择→输入 Key→保存（明文显示）"""
     if not check_backend(silent=True):
         return
     with api_client() as client:
-        # 若未传 -k，交互式输入（隐藏密码）
-        if not key:
-            import getpass
-            key = getpass.getpass(f"输入 {provider} 的 API Key: ")
-        if not key:
+        try:
+            r = _api_get(client, "/config/providers")
+            providers = r.json() if r.status_code == 200 else []
+        except Exception:
+            console.print("[red]无法获取提供商列表，请确认后端已启动[/]")
+            return
+
+        if not providers:
+            console.print("[red]未获取到提供商列表[/]")
+            return
+
+        # 显示可用提供商
+        table = Table(title="选择要配置的 LLM 提供商", box=ROUNDED, show_header=True)
+        table.add_column("#", style="dim cyan", justify="right", width=3)
+        table.add_column("ID", style="dim")
+        table.add_column("名称")
+        table.add_column("状态")
+        for i, p in enumerate(providers, 1):
+            status = "[green]已配置[/]" if p.get("configured") else "[dim]未配置[/]"
+            table.add_row(str(i), p["key"], p["name"], status)
+        console.print(table)
+
+        # 让用户选择
+        while True:
+            choice = console.input("[bold]选择序号或 ID[/] (输入回车退出): ").strip()
+            if not choice:
+                return
+            selected = None
+            try:
+                idx = int(choice) - 1
+                if 0 <= idx < len(providers):
+                    selected = providers[idx]
+            except ValueError:
+                for p in providers:
+                    if p["key"] == choice:
+                        selected = p
+                        break
+            if selected:
+                break
+            console.print("[red]无效选择，请重试[/]")
+
+        provider_key = selected["key"]
+        provider_name = selected["name"]
+
+        # 输入 API Key（明文显示）
+        console.print(f"\n配置 [bold]{provider_name}[/] ({provider_key})")
+        console.print("请输入 API Key（明文显示，如需复制粘贴请放心）")
+        api_key = console.input(f"[bold]API Key[/]: ").strip()
+
+        if not api_key:
             console.print("[red]API Key 不能为空[/]")
             return
 
+        # 可选设为默认
+        set_default = console.input("设为此提供商为默认模型？(y/N): ").strip().lower() == "y"
+
+        # 保存
         try:
             r = _api_post(client, "/config/provider", json={
-                "provider_key": provider, "api_key": key, "enabled": True,
-                "is_default": default, "models": [],
+                "provider_key": provider_key, "api_key": api_key, "enabled": True,
+                "is_default": set_default, "models": [],
             })
             if r.status_code == 200:
-                console.print(f"[green]✓[/] {provider} 配置已保存")
-                if default:
-                    r2 = _api_post(client, "/config/default", json={"provider_key": provider})
+                console.print(f"[green]✓[/] {provider_name} 配置已保存")
+                if set_default:
+                    r2 = _api_post(client, "/config/default", json={"provider_key": provider_key})
                     if r2 and r2.ok:
-                        console.print(f"[green]✓[/] {provider} 已设为默认")
+                        console.print(f"[green]✓[/] {provider_name} 已设为默认")
             else:
                 console.print(f"[red]保存失败: {r.status_code}[/]")
         except Exception as e:
