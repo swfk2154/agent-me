@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agent-me-cli"
+version = "2.1.0"
+description = "agent-me CLI"
+requires-python = ">=3.10"
+dependencies = [
+    "click>=8.1.0",
+    "rich>=13.0.0",
+    "httpx>=0.28.0",
+]
+
+[project.scripts]
+agent-me = "agent_me.main:cli"

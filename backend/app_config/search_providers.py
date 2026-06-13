@@ -1,0 +1,61 @@
+"""搜索提供商定义 —— 支持 DuckDuckGo/Tavily/Brave/SerpAPI/Serper/SearXNG/自定义"""
+SEARCH_PROVIDERS = {
+    "duckduckgo": {
+        "name": "DuckDuckGo",
+        "description": "免费即时搜索，无需 API Key",
+        "api_key_url": "",
+        "needs_api_key": False,
+        "is_default": True,
+        "base_url": "",
+    },
+    "tavily": {
+        "name": "Tavily",
+        "description": "专为 AI Agent 优化的搜索 API",
+        "api_key_url": "https://app.tavily.com/home",
+        "needs_api_key": True,
+        "is_default": False,
+        "base_url": "https://api.tavily.com/search",
+    },
+    "brave": {
+        "name": "Brave Search",
+        "description": "Brave 搜索引擎 API",
+        "api_key_url": "https://api.search.brave.com/app/keys",
+        "needs_api_key": True,
+        "is_default": False,
+        "base_url": "https://api.search.brave.com/res/v1/web/search",
+    },
+    "serpapi": {
+        "name": "SerpAPI",
+        "description": "Google 搜索结果 API",
+        "api_key_url": "https://serpapi.com/manage-api-key",
+        "needs_api_key": True,
+        "is_default": False,
+        "base_url": "https://serpapi.com/search",
+    },
+    "serper": {
+        "name": "Serper.dev",
+        "description": "快速 Google 搜索 API（免费额度 2500次/月）",
+        "api_key_url": "https://serper.dev/api-key",
+        "needs_api_key": True,
+        "is_default": False,
+        "base_url": "https://google.serper.dev/search",
+    },
+    "searxng": {
+        "name": "SearXNG（自建）",
+        "description": "开源元搜索引擎，可 Docker 自建，无需 API Key",
+        "api_key_url": "https://github.com/searxng/searxng",
+        "needs_api_key": False,
+        "is_default": False,
+        "base_url": "http://localhost:8080/search",
+    },
+    "custom": {
+        "name": "自定义搜索",
+        "description": "兼容 OpenAI/JSON 格式的搜索 API，自行填写 URL",
+        "api_key_url": "",
+        "needs_api_key": True,
+        "is_default": False,
+        "base_url": "",
+        "is_custom": True,
+    },
+}
+SEARCH_PROVIDER_ORDER = ["duckduckgo", "tavily", "brave", "serpapi", "serper", "searxng", "custom"]
