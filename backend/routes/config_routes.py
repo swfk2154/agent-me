@@ -92,16 +92,15 @@ async def available_models():
         saved = config.get(key, {})
         if saved.get("enabled") and saved.get("api_key"):
             from services.llm_service import _get_model_string
-            provider_models = saved.get("models", PROVIDERS[key].get("models", []))
+            provider_models = saved.get("models") or PROVIDERS[key].get("models", [])
             for m in provider_models:
                 full = _get_model_string(key, m)
                 models.append({"value": full, "label": f"{PROVIDERS[key]['name']} - {m}", "provider": key})
     if not models:
-        # 查找第一个已配置的
         for key in PROVIDER_ORDER:
             saved = config.get(key, {})
             if saved.get("enabled") and saved.get("api_key"):
-                provider_models = saved.get("models", PROVIDERS[key].get("models", []))
+                provider_models = saved.get("models") or PROVIDERS[key].get("models", [])
                 if provider_models:
                     from services.llm_service import _get_model_string
                     full = _get_model_string(key, provider_models[0])
