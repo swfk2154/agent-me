@@ -1,6 +1,7 @@
-"""记忆服务 v2.1：轻量版兼容
-- 有 chromadb + sentence-transformers → 向量语义检索
+"""记忆服务 v2.2：轻量版兼容
+- 有 chromadb → 向量语义检索（ChromaDB 内置 ONNX 嵌入，无 PyTorch）
 - 无 chromadb → 降级为 SQLite 简单存储 + 关键词匹配
+- 保留 sentence-transformers 回退路径（兼容已安装旧版环境的用户）
 """
 import json, uuid, datetime, math, re, sqlite3
 from collections import defaultdict, deque
@@ -14,7 +15,6 @@ from app_config.settings import (
 
 # ---------- 可选依赖检测 ----------
 _CHROMA_AVAILABLE = False
-_EMBEDDING_AVAILABLE = False
 
 try:
     import chromadb
@@ -22,11 +22,13 @@ try:
 except ImportError:
     chromadb = None
 
+# sentence-transformers 回退（兼容已安装旧环境的用户，新版不再依赖）
+_SentenceTransformer = None
 try:
-    from sentence_transformers import SentenceTransformer
-    _EMBEDDING_AVAILABLE = True
+    from sentence_transformers import SentenceTransformer as _ST
+    _SentenceTransformer = _ST
 except ImportError:
-    SentenceTransformer = None
+    pass
 
 
 class MemoryService:
@@ -77,20 +79,43 @@ class MemoryService:
             """)
             self._sqlite_conn.commit()
 
-    @property
-    def embedding_model(self):
-        if self._model is None and not self._model_load_attempted and _EMBEDDING_AVAILABLE:
-            self._model_load_attempted = True
+    def _load_embedding_model(self):
+        """加载嵌入模型：优先 ChromaDB ONNX（轻量），回退 sentence-transformers（兼容旧环境）"""
+        if self._model is not None or self._model_load_attempted:
+            return
+        self._model_load_attempted = True
+
+        # 方案 1: ChromaDB 内置 ONNX 嵌入（无 torch，约 100MB）
+        if _CHROMA_AVAILABLE:
             try:
-                self._model = SentenceTransformer(EMBEDDING_MODEL)
+                from chromadb.utils.embedding_functions import DefaultEmbeddingFunction
+                self._model = DefaultEmbeddingFunction()
+                return
             except Exception:
-                self._model = None
-        return self._model
+                pass
+
+        # 方案 2: sentence-transformers（兼容已安装旧环境的用户，约 2GB）
+        if _SentenceTransformer is not None:
+            try:
+                self._model = _SentenceTransformer(EMBEDDING_MODEL)
+                return
+            except Exception:
+                pass
+
+        self._model = None
 
     def _encode(self, text: str) -> Optional[list]:
-        if self.embedding_model:
-            return self.embedding_model.encode(text).tolist()
-        return None
+        self._load_embedding_model()
+        if self._model is None:
+            return None
+
+        model_type = type(self._model).__name__
+        if model_type == "DefaultEmbeddingFunction":
+            # ChromaDB ONNX 嵌入：接受 list，返回 list[list[float]]
+            return self._model([text])[0]
+        else:
+            # sentence-transformers：encode 返回 numpy array
+            return self._model.encode(text).tolist()
 
     # === 短期记忆（始终可用） ===
     def add_to_short_term(self, conv_id, role, content):

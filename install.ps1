@@ -124,7 +124,7 @@ Write-Step "安装后端依赖"
 $reqFile = "requirements.txt"
 if ($FullInstall) {
     $reqFile = "requirements-full.txt"
-    Write-Warn "完整版依赖包含 PyTorch（约 2GB），首次安装可能需要 5~15 分钟"
+    Write-Warn "完整版依赖约 400MB（ONNX 嵌入替代 PyTorch），首次安装可能需要 3~8 分钟"
     Write-Info "如果卡住超过 20 分钟，请检查网络或按 Ctrl+C 中断后加 -UseMirror 重试"
 } else {
     Write-Info "安装轻量版核心依赖（约 50MB）。如需向量记忆 + 文件分析，加 -FullInstall 参数"

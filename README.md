@@ -17,7 +17,7 @@ cd agent-me
 
 #### ⚡ 第 0 步：换国内镜像源（强烈推荐，只需一次）
 
-> 不换源 = PyTorch 2GB 从外网下载，可能耗时 30 分钟以上甚至超时失败。换源后通常 5~10 分钟完成。
+> 不换源 = 完整版约 400MB 从外网下载，可能耗时 10 分钟以上。换源后通常 3~5 分钟完成。
 
 ```bash
 # pip 换清华源（永久生效）
@@ -35,7 +35,7 @@ npm config set registry https://registry.npmmirror.com
 | 版本 | 安装大小 | 功能差异 |
 |------|---------|---------|
 | **轻量版（默认）** | ~50MB | 多轮对话、联网搜索、命令执行、任务管理、写作助手、CLI、用户画像 |
-| **完整版** | ~2GB | 轻量版全部 + **向量语义检索长期记忆** + **文件上传分析（PDF/DOCX/TXT）** |
+| **完整版** | ~400MB | 轻量版全部 + **向量语义检索长期记忆** + **文件上传分析（PDF/DOCX/TXT）** |
 
 > 首次安装建议先用轻量版，体验核心功能。如需文件分析或语义记忆搜索，再升级到完整版。
 
@@ -47,7 +47,7 @@ npm config set registry https://registry.npmmirror.com
 # Windows — 轻量版（默认，约 50MB）
 .\install.ps1 -UseMirror
 
-# Windows — 完整版（含向量记忆 + 文件分析，约 2GB）
+# Windows — 完整版（含向量记忆 + 文件分析，约 400MB）
 .\install.ps1 -UseMirror -FullInstall
 
 # macOS / Linux — 轻量版（默认）
@@ -78,7 +78,7 @@ chmod +x install.sh && ./install.sh --mirror --full
 # 终端 1 — 后端（轻量版，约 50MB）
 cd backend && pip install -r requirements.txt --prefer-binary
 
-# 完整版（约 2GB，PyTorch 是大头）
+# 完整版（约 400MB，ONNX 嵌入替代 PyTorch）
 cd backend && pip install -r requirements-full.txt --prefer-binary
 
 # 终端 2 — 前端（并行执行）
@@ -113,7 +113,7 @@ source .venv/bin/activate
 
 | 问题 | 原因 | 解决 |
 |------|------|------|
-| `pip install` 卡住/超时 | **完整版**从外网下载 PyTorch（2GB） | 换国内镜像源；或改用**轻量版** |
+| `pip install` 卡住/超时 | **完整版**从外网下载（约 400MB） | 换国内镜像源；或改用**轻量版** |
 | `npm install` 报错 "禁止运行脚本" | PowerShell 执行策略限制 | 改用 CMD 运行 `npm install` |
 | `Building wheel for ...` 卡住 | 从源码编译 C 扩展 | 加 `--prefer-binary` 参数 |
 | `No module named '_ctypes'` | Python 编译时缺少 libffi | 重装 Python（官网安装包） |
@@ -333,7 +333,7 @@ agent-me/
 ├── stop.sh                   # 一键关闭 (macOS/Linux)
 ├── backend/
 │   ├── requirements.txt      # 核心依赖（轻量版，~50MB）
-│   ├── requirements-full.txt # 完整依赖（+向量记忆+文件分析，~2GB）
+│   ├── requirements-full.txt # 完整依赖（+向量记忆+文件分析，~400MB）
 │   ├── main.py               # FastAPI 入口
 │   ├── app_config/           # providers / settings / encryption / logging / search_providers
 │   ├── routes/               # chat / config / files / memory / tasks / writing / skills / commands / search / export / browser / agent

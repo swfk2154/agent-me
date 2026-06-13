@@ -1,13 +1,12 @@
-# agent-me 完整依赖（含向量记忆 + 文件分析，约 2GB）
+# agent-me 完整依赖（含向量记忆 + 文件分析，约 400MB）
 # 在核心依赖基础上，增加以下功能：
-#   - 长期记忆向量检索（ChromaDB + sentence-transformers）
+#   - 长期记忆向量检索（ChromaDB 内置 ONNX 嵌入，无需 PyTorch）
 #   - 文件上传解析（PDF / DOCX / TXT）
 #   - 文件 RAG 检索
 
 -r requirements.txt
 
 chromadb==0.5.23
-sentence-transformers>=3.0.0
 pdfplumber==0.11.4
 python-docx==1.1.2
 PyPDF2==3.0.1

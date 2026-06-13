@@ -17,7 +17,7 @@ while [[ $# -gt 0 ]]; do
             echo "用法: ./install.sh [--mirror] [--venv] [--full]"
             echo "  --mirror  使用国内镜像源加速（强烈推荐）"
             echo "  --venv    使用 Python 虚拟环境"
-            echo "  --full    安装完整版（含向量记忆 + 文件分析，约 2GB）"
+            echo "  --full    安装完整版（含向量记忆 + 文件分析，约 400MB）"
             exit 0
             ;;
         *) echo "未知参数: $1"; exit 1 ;;
@@ -109,7 +109,7 @@ step "安装依赖（后端和前端并行）"
 REQ_FILE="requirements.txt"
 if [[ "$FULL_INSTALL" == true ]]; then
     REQ_FILE="requirements-full.txt"
-    warn "完整版依赖包含 PyTorch（约 2GB），首次安装 5~15 分钟属正常"
+    warn "完整版依赖约 400MB（ONNX 嵌入替代 PyTorch），首次安装 3~8 分钟属正常"
 else
     warn "安装轻量版核心依赖（约 50MB）。如需向量记忆 + 文件分析，加 --full 参数"
 fi
