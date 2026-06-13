@@ -22,15 +22,15 @@ $failed = @()
 $pidFile = Join-Path $root "running_pids.txt"
 if (Test-Path $pidFile) {
     $pids = @(Get-Content $pidFile | Where-Object { $_ -match '^\d+$' })
-    foreach ($pid in $pids) {
+    foreach ($p in $pids) {
         try {
-            $proc = Get-Process -Id $pid -ErrorAction Stop
+            $proc = Get-Process -Id $p -ErrorAction Stop
             $name = $proc.ProcessName
-            Stop-Process -Id $pid -Force -ErrorAction Stop
-            Write-O "Stopped $name (PID $pid)"
-            $killed += $pid
+            Stop-Process -Id $p -Force -ErrorAction Stop
+            Write-O "Stopped $name (PID $p)"
+            $killed += $p
         } catch {
-            Write-W "PID $pid no longer running"
+            Write-W "PID $p no longer running"
         }
     }
     Remove-Item $pidFile -Force -ErrorAction SilentlyContinue

@@ -15,7 +15,6 @@ Write-Host ""
 
 # ---------- 1. Check Python & npm ----------
 
-# Python: prefer venv, fallback to global
 $pythonPath = $null
 if (Test-Path "$root\.venv\Scripts\python.exe") {
     $pythonPath = "$root\.venv\Scripts\python.exe"
@@ -69,10 +68,10 @@ if (Test-Path $pidFile) {
     $oldPids = @(Get-Content $pidFile | Where-Object { $_ -match '^\d+$' })
     if ($oldPids.Count -gt 0) {
         Write-W "Cleaning up old processes..."
-        foreach ($pid in $oldPids) {
+        foreach ($p in $oldPids) {
             try {
-                Stop-Process -Id $pid -Force -ErrorAction Stop
-                Write-O "Killed old PID $pid"
+                Stop-Process -Id $p -Force -ErrorAction Stop
+                Write-O "Killed old PID $p"
             } catch {}
         }
         Remove-Item $pidFile -Force -ErrorAction SilentlyContinue
@@ -87,18 +86,18 @@ function Test-Port($port) {
     } catch { return $null }
 }
 
-foreach ($p in @(8000, 3000)) {
-    if (Test-Port $p) {
-        Write-W "Port $p in use, releasing..."
-        Get-NetTCPConnection -LocalPort $p -ErrorAction SilentlyContinue |
+foreach ($port in @(8000, 3000)) {
+    if (Test-Port $port) {
+        Write-W "Port $port in use, releasing..."
+        Get-NetTCPConnection -LocalPort $port -ErrorAction SilentlyContinue |
             Select-Object -ExpandProperty OwningProcess -Unique |
             Where-Object { $_ -ne 0 } |
             ForEach-Object {
                 try {
                     Stop-Process -Id $_ -Force -ErrorAction Stop
-                    Write-O "Released port $p (PID $_)"
+                    Write-O "Released port $port (PID $_)"
                 } catch {
-                    Write-E "Cannot release port $p. Close the program using it."
+                    Write-E "Cannot release port $port. Close the program using it."
                 }
             }
         Start-Sleep -Seconds 1
