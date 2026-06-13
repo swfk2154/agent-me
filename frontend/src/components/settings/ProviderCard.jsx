@@ -64,8 +64,10 @@ export default function ProviderCard({ provider, onSave, onTest, onSetDefault })
 
   const handleSave = async () => {
     setSaving(true);
+    setTestResult(null);
     try {
-      await api.saveProvider({
+      // 通过 onSave 回调统一保存，避免重复请求
+      await onSave?.({
         provider_key: provider.key,
         api_key: apiKey || "",
         enabled: enabled,
@@ -73,16 +75,16 @@ export default function ProviderCard({ provider, onSave, onTest, onSetDefault })
         models: selectedModels,
         base_url: baseUrl || undefined,
       });
-      // 保存成功，同步本地状态
+      // 保存成功，即时更新本地显示状态
       if (apiKey) {
         const masked = apiKey.length > 8
           ? apiKey.slice(0, 4) + "*".repeat(apiKey.length - 8) + apiKey.slice(-4)
           : "*".repeat(apiKey.length);
         setMaskedKey(masked);
       }
-      onSave?.(provider.key);
+      setApiKey(""); // 清空输入框，让用户明确感知已保存
     } catch (e) {
-      console.error("Save failed:", e);
+      setTestResult({ success: false, message: `保存失败: ${e.message || "请检查网络连接"}` });
     }
     setSaving(false);
   };

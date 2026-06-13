@@ -13,34 +13,112 @@ cd agent-me
 
 ### 2. 安装依赖
 
-**Windows (PowerShell)**
+**前置条件**：Python ≥ 3.10、Node.js ≥ 18、Git（[下载 Python](https://www.python.org/downloads/) | [下载 Node.js](https://nodejs.org/)）
 
-```powershell
-# Python 后端依赖
-cd backend
-pip install -r requirements.txt
+#### ⚡ 第 0 步：换国内镜像源（强烈推荐，只需一次）
 
-# Node.js 前端依赖
-cd ..\frontend
-npm install
-
-# CLI 工具（可选）
-cd ..\cli
-pip install -e .
-```
-
-**macOS / Linux (bash)**
+> 不换源 = PyTorch 2GB 从外网下载，可能耗时 30 分钟以上甚至超时失败。换源后通常 5~10 分钟完成。
 
 ```bash
-# Python 后端依赖
-cd backend && pip install -r requirements.txt
+# pip 换清华源（永久生效）
+pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
+pip config set global.trusted-host pypi.tuna.tsinghua.edu.cn
 
-# Node.js 前端依赖
-cd ../frontend && npm install
-
-# CLI 工具（可选）
-cd ../cli && pip install -e .
+# npm 换淘宝源（永久生效）
+npm config set registry https://registry.npmmirror.com
 ```
+
+---
+
+#### 选择版本
+
+| 版本 | 安装大小 | 功能差异 |
+|------|---------|---------|
+| **轻量版（默认）** | ~50MB | 多轮对话、联网搜索、命令执行、任务管理、写作助手、CLI、用户画像 |
+| **完整版** | ~2GB | 轻量版全部 + **向量语义检索长期记忆** + **文件上传分析（PDF/DOCX/TXT）** |
+
+> 首次安装建议先用轻量版，体验核心功能。如需文件分析或语义记忆搜索，再升级到完整版。
+
+#### 安装方式
+
+**方式 A：一键安装脚本（最快，推荐）**
+
+```bash
+# Windows — 轻量版（默认，约 50MB）
+.\install.ps1 -UseMirror
+
+# Windows — 完整版（含向量记忆 + 文件分析，约 2GB）
+.\install.ps1 -UseMirror -FullInstall
+
+# macOS / Linux — 轻量版（默认）
+chmod +x install.sh && ./install.sh --mirror
+
+# macOS / Linux — 完整版
+chmod +x install.sh && ./install.sh --mirror --full
+```
+
+脚本自动处理：环境检测 → 换源 → 升级 pip/wheel → 优先安装预编译包 → 并行安装前后端。
+
+**方式 B：手动安装**
+
+**Windows — 推荐用 CMD（避开 PowerShell 执行策略问题）**
+
+按 `Win + R`，输入 `cmd` 回车，打开 **两个 CMD 窗口**：
+
+| 窗口 1 — 后端 | 窗口 2 — 前端 |
+|---|---|
+| `cd backend` | `cd frontend` |
+| `pip install -r requirements.txt --prefer-binary` | `npm install` |
+
+完整版（需要向量记忆 + 文件分析）：`pip install -r requirements-full.txt --prefer-binary`
+
+**macOS / Linux — 终端**
+
+```bash
+# 终端 1 — 后端（轻量版，约 50MB）
+cd backend && pip install -r requirements.txt --prefer-binary
+
+# 完整版（约 2GB，PyTorch 是大头）
+cd backend && pip install -r requirements-full.txt --prefer-binary
+
+# 终端 2 — 前端（并行执行）
+cd frontend && npm install
+```
+
+> `--prefer-binary` 表示优先安装预编译的 wheel 包，避免从源码编译导致失败或极慢。
+
+**CLI 工具安装（可选，后端装完后执行）**：
+
+```bash
+cd cli
+pip install -e . --prefer-binary
+```
+
+**方式 C：使用虚拟环境（避免污染全局 Python）**
+
+```bash
+# 创建虚拟环境
+python -m venv .venv
+
+# Windows 激活
+.venv\Scripts\activate
+
+# macOS / Linux 激活
+source .venv/bin/activate
+
+# 激活后再执行方式 A 或 B 的安装步骤
+```
+
+#### 常见安装问题
+
+| 问题 | 原因 | 解决 |
+|------|------|------|
+| `pip install` 卡住/超时 | **完整版**从外网下载 PyTorch（2GB） | 换国内镜像源；或改用**轻量版** |
+| `npm install` 报错 "禁止运行脚本" | PowerShell 执行策略限制 | 改用 CMD 运行 `npm install` |
+| `Building wheel for ...` 卡住 | 从源码编译 C 扩展 | 加 `--prefer-binary` 参数 |
+| `No module named '_ctypes'` | Python 编译时缺少 libffi | 重装 Python（官网安装包） |
+| 安装完成后启动报错 | 依赖版本不兼容 | 确认 Python ≥ 3.10，Node.js ≥ 18 |
+| 文件上传后无法解析 | 未安装完整版 | `pip install -r requirements-full.txt` |
 
 ### 3. 启动服务
 
@@ -121,14 +199,14 @@ pkill -f "vite"      # 关闭前端
 | **8 个内置工具** | 联网搜索、读取文件、列出目录、执行命令、搜索记忆、搜索文件、浏览器控制、获取时间 |
 | **18 种技能模式** | plan_first / product_mindset / ship_first / minimal_deps / oop / functional / claude_code_style / cursor_style / pair_programming / caveman / diagnose / grill / prototype / tdd / architecture / triage / zoom_out / security |
 | **多厂商 LLM** | OpenAI / Anthropic / Google / DeepSeek / Kimi (月之暗面) / MiniMax / 智谱 GLM / 字节豆包 / 自定义 —— 9 家 |
-| **智能记忆 v2.0** | 短期(会话缓存 50 轮) + 长期(ChromaDB 向量检索+重要性评分+时间衰减) + 结构化用户画像(自动事实提取) |
+| **智能记忆 v2.0** | 短期(会话缓存 50 轮) + 长期记忆 + 结构化用户画像(自动事实提取) |
 | **会话摘要** | 每 20 轮自动生成一句话摘要，替代逐条存储，大幅减少 token |
-| **文件分析** | PDF / DOCX / TXT 上传解析 → 切片 → RAG 检索 |
+| **文件分析** | PDF / DOCX / TXT 上传解析 → 切片 → RAG 检索（需完整版） |
 | **写作助手** | 润色 / 扩写 / 缩写 / 英译中 / 中译英 / 正式语气 / 随意语气 / 列大纲 / 写邮件 / 周报 —— 10 种模板 |
 | **任务管理** | 待办看板 + 截止日期 + 完成状态 |
 | **联网搜索** | DuckDuckGo (免费) / Tavily / Brave / SerpAPI / Serper / SearXNG / 自定义 |
 | **命令执行** | 三级安全审批（自动放行 / 确认 / 禁止），含高危模式检测和多段命令拦截 |
-| **浏览器控制** | Kimi WebBridge 集成，支持页面导航、点击、截图、JS 执行 |
+| **浏览器控制** | Kimi WebBridge 集成，支持页面导航、点击、截图、 JS 执行 |
 | **对话导出** | Markdown / JSON |
 | **深色模式** | 自动适配系统偏好 / 手动切换 |
 | **日志查看** | Web 端 /api/logs 实时查看，滚动存储（5MB × 3） |
@@ -190,11 +268,11 @@ agent-me v2.1 引入了**自动判断模式**，无需手动切换：
 
 ### 三层架构
 
-| 层级 | 存储 | 容量 | 机制 |
-|------|------|------|------|
-| **短期记忆** | 内存 deque | 50 轮/会话 | 会话结束自动清除 |
-| **长期记忆** | ChromaDB 向量 | 无上限 | 重要性评分 + 时间衰减 |
-| **用户画像** | JSON 文件 | 持久 | 自动事实提取 |
+| 层级 | 存储 | 容量 | 机制 | 版本要求 |
+|------|------|------|------|----------|
+| **短期记忆** | 内存 deque | 50 轮/会话 | 会话结束自动清除 | 轻量版/完整版 |
+| **长期记忆** | ChromaDB 向量 / SQLite | 无上限 | 重要性评分 + 时间衰减 | 完整版=向量检索；轻量版=关键词匹配 |
+| **用户画像** | JSON 文件 | 持久 | 自动事实提取 | 轻量版/完整版 |
 
 ### 自动事实提取
 
@@ -247,9 +325,15 @@ agent-me v2.1 引入了**自动判断模式**，无需手动切换：
 
 ```
 agent-me/
-├── start.ps1                 # 一键后台启动 (v2.1)
-├── stop.ps1                  # 一键关闭 (v2.1)
+├── install.ps1               # 一键安装依赖 (Windows)
+├── install.sh                # 一键安装依赖 (macOS/Linux)
+├── start.ps1                 # 一键后台启动 (Windows)
+├── start.sh                  # 一键后台启动 (macOS/Linux)
+├── stop.ps1                  # 一键关闭 (Windows)
+├── stop.sh                   # 一键关闭 (macOS/Linux)
 ├── backend/
+│   ├── requirements.txt      # 核心依赖（轻量版，~50MB）
+│   ├── requirements-full.txt # 完整依赖（+向量记忆+文件分析，~2GB）
 │   ├── main.py               # FastAPI 入口
 │   ├── app_config/           # providers / settings / encryption / logging / search_providers
 │   ├── routes/               # chat / config / files / memory / tasks / writing / skills / commands / search / export / browser / agent

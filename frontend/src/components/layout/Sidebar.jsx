@@ -13,7 +13,7 @@ const navItems = [
 
 export default function Sidebar() {
   const { conversations, activeConversation, sidebarOpen, toggleSidebar, activeTab, setActiveTab, darkMode, toggleDarkMode } = useStore();
-  const { createConversation, selectConversation, deleteConversation } = useChat();
+  const { createConversation, selectConversation, deleteConversation, creating } = useChat();
 
   if (!sidebarOpen) {
     return (
@@ -40,9 +40,14 @@ export default function Sidebar() {
       </div>
 
       {/* 新对话按钮 */}
-      <button onClick={createConversation}
-        className="mx-3 mt-3 flex items-center justify-center gap-2 btn-primary">
-        <Plus className="w-4 h-4" /> 新对话
+      <button onClick={createConversation} disabled={creating}
+        className="mx-3 mt-3 flex items-center justify-center gap-2 btn-primary disabled:opacity-50 disabled:cursor-not-allowed">
+        {creating ? (
+          <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+        ) : (
+          <Plus className="w-4 h-4" />
+        )}
+        {creating ? "创建中..." : "新对话"}
       </button>
 
       {/* 导航 */}

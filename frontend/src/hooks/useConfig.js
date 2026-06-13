@@ -20,7 +20,11 @@ export function useConfig() {
     } catch {}
   }, []);
 
-  const saveProvider = async (data) => { await api.saveProvider(data); await loadProviders(); };
+  const saveProvider = async (data) => {
+    await api.saveProvider(data);
+    await loadProviders();
+    store.addToast("配置已保存", "success");
+  };
   const testConnection = async (data) => api.testConnection(data);
   const setDefaultModel = async (providerKey) => { await api.setDefault(providerKey); await loadProviders(); };
 

@@ -1,10 +1,11 @@
-import { useEffect, useCallback, useRef } from "react";
+import { useEffect, useCallback, useRef, useState } from "react";
 import useStore from "../store";
 import { api } from "../utils/api";
 
 export function useChat() {
   const store = useStore();
   const abortRef = useRef(null);
+  const [creating, setCreating] = useState(false);
 
   useEffect(() => {
     api.listConversations().then((list) => {
@@ -24,19 +25,31 @@ export function useChat() {
   }, []);
 
   const createConversation = async (title = "新对话") => {
-    const conv = await api.newConversation(title, store.currentModel, store.systemPrompt);
-    store.addConversation(conv);
-    store.setActiveConversation(conv.id);
-    store.setMessages(conv.id, []);
-    store.setActiveTab("chat");
-    return conv;
+    setCreating(true);
+    try {
+      const conv = await api.newConversation(title, store.currentModel, store.systemPrompt);
+      store.addConversation(conv);
+      store.setActiveConversation(conv.id);
+      store.setMessages(conv.id, []);
+      store.setActiveTab("chat");
+      return conv;
+    } catch (e) {
+      store.addToast(`创建对话失败: ${e.message || "请检查后端是否已启动"}`, "error");
+      throw e;
+    } finally {
+      setCreating(false);
+    }
   };
 
   const sendMessage = async (content, fileIds = [], imageData = []) => {
     let convId = store.activeConversation;
     if (!convId) {
-      const conv = await createConversation();
-      convId = conv.id;
+      try {
+        const conv = await createConversation();
+        convId = conv.id;
+      } catch {
+        return;
+      }
     }
 
     store.addMessage(convId, { role: "user", content: imageData.length ? `[图片] ${content}` : content, timestamp: new Date().toISOString() });
@@ -108,5 +121,5 @@ export function useChat() {
     }
   };
 
-  return { createConversation, sendMessage, cancelStream, selectConversation, deleteConversation, loadMessages };
+  return { createConversation, sendMessage, cancelStream, selectConversation, deleteConversation, loadMessages, creating };
 }
