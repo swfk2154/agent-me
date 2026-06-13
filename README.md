@@ -111,7 +111,9 @@ source .venv/bin/activate
 
 ### 3. 启动服务
 
-**Windows — 一键启动（推荐）**
+**Windows — 一键启动**
+
+> 如果 PowerShell 报"禁止运行脚本"，先执行：`Set-ExecutionPolicy Bypass -Scope Process -Force`
 
 ```powershell
 # 在 PowerShell 中运行，后台启动后端 + 前端，~3s 就绪
@@ -120,6 +122,8 @@ source .venv/bin/activate
 # 关闭服务
 .\stop.ps1
 ```
+
+> start.ps1 运行后窗口保持打开，可手动关闭（服务不会停止）。停服务请用 stop.ps1。
 
 **macOS / Linux — 一键启动（推荐）**
 
@@ -151,13 +155,24 @@ npm run dev
 **关闭手动启动的进程**
 
 ```bash
-# 方案 A — 按端口关闭（推荐）
+# macOS / Linux — 按端口关闭
 lsof -ti:8000 | xargs kill -9 2>/dev/null   # 关闭后端
 lsof -ti:3000 | xargs kill -9 2>/dev/null   # 关闭前端
 
-# 方案 B — 按进程名关闭
+# macOS / Linux — 按进程名关闭
 pkill -f "uvicorn"   # 关闭后端
 pkill -f "vite"      # 关闭前端
+```
+
+Windows 用户请使用 `.\stop.ps1` 关闭。如果 `stop.ps1` 无效，手动操作：
+
+```cmd
+:: 查看谁占用了端口
+netstat -ano | findstr :8000
+netstat -ano | findstr :3000
+
+:: 找到 PID 后终止（假设 PID=12345）
+taskkill /F /PID 12345
 ```
 
 ### 4. 开始使用
@@ -165,8 +180,11 @@ pkill -f "vite"      # 关闭前端
 1. **Web 端**：浏览器打开 http://localhost:3000 → 设置 → 配置 API Key → 开始对话
 2. **CLI 端**（需先启动后端）：
    ```bash
-   agent-me chat              # 交互式聊天，启动时可选模型
-   agent-me ask "你的问题"     # 一次性问答，-m 指定模型
+   agent-me config list            # 查看提供商列表
+   agent-me config set openai      # 交互式配置 API Key（输入时隐藏，安全）
+   agent-me config test openai     # 测试连接
+   agent-me chat                   # 交互式聊天，启动时可选模型
+   agent-me ask "你的问题"         # 一次性问答，-m 指定模型
    ```
 
 ## 界面预览
@@ -365,9 +383,9 @@ agent-me ask "问题"         # 一次性问答，-m 模型 -f 文件 -s 技能 
 
 # === 模型与配置 ===
 agent-me models            # 查看可用模型
-agent-me config list       # 查看提供商配置
-agent-me config set <id> -k <key> --default   # 配置 API Key
-agent-me config test <id>  # 测试连接
+agent-me config list             # 查看提供商配置
+agent-me config set <id>          # 交互式配置 API Key（不显示明文，安全）
+agent-me config test <id>         # 测试连接
 
 # === 对话管理 ===
 agent-me conversations     # 列出所有对话

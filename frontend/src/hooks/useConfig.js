@@ -12,10 +12,15 @@ export function useConfig() {
       store.setProviders(list);
       const models = await api.getModels();
       store.setAvailableModels(models);
-      if (models.length && !store.currentModel) {
+      if (models.length) {
         const saved = localStorage.getItem("agent-me-model");
         const exists = models.some((m) => m.value === saved);
-        store.setCurrentModel(exists && saved ? saved : models[0].value);
+        if (exists && saved) {
+          store.setCurrentModel(saved);
+        } else {
+          // 当前模型不在列表中，自动选中第一个可用模型
+          store.setCurrentModel(models[0].value);
+        }
       }
     } catch {}
   }, []);

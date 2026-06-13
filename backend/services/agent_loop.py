@@ -9,7 +9,7 @@ import json, asyncio, os
 from pathlib import Path
 from typing import AsyncGenerator
 from datetime import datetime
-import litellm
+from services.llm_client import acompletion
 from services.llm_service import chat_stream, _get_llm_kwargs, _build_system_prompt
 from services.search_service import search_web
 from services.memory_service import memory_service
@@ -474,7 +474,7 @@ async def agent_loop_stream(
         full_msgs = [{"role": "system", "content": system}] + conversation
 
         try:
-            response = await litellm.acompletion(
+            response = await acompletion(
                 model=model, messages=full_msgs, tools=AGENT_TOOLS,
                 tool_choice="auto", **kwargs)
         except Exception as e:

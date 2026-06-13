@@ -985,13 +985,21 @@ def config_list():
 
 @config.command("set")
 @click.argument("provider")
-@click.option("--key", "-k", default="", help="API Key")
+@click.option("--key", "-k", default="", help="API Key（省略则交互式输入）")
 @click.option("--default", is_flag=True, help="设为默认")
 def config_set(provider, key, default):
-    """配置提供商 API Key"""
+    """配置提供商 API Key（-k 省略时交互式输入，不显示明文）"""
     if not check_backend(silent=True):
         return
     with api_client() as client:
+        # 若未传 -k，交互式输入（隐藏密码）
+        if not key:
+            import getpass
+            key = getpass.getpass(f"输入 {provider} 的 API Key: ")
+        if not key:
+            console.print("[red]API Key 不能为空[/]")
+            return
+
         try:
             r = _api_post(client, "/config/provider", json={
                 "provider_key": provider, "api_key": key, "enabled": True,

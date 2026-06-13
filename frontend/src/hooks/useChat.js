@@ -13,6 +13,20 @@ export function useChat() {
       if (list.length && !store.activeConversation) store.setActiveConversation(list[0].id);
     }).catch(() => {});
     api.getSkillModes().then((modes) => store.setSkillModes(modes)).catch(() => {});
+    // 初始化时加载模型列表，确保顶栏下拉框立即可用
+    api.getProviders().then((list) => store.setProviders(list)).catch(() => {});
+    api.getModels().then((models) => {
+      store.setAvailableModels(models);
+      if (models.length) {
+        const saved = localStorage.getItem("agent-me-model");
+        const exists = models.some((m) => m.value === saved);
+        if (exists && saved) {
+          store.setCurrentModel(saved);
+        } else if (!store.currentModel) {
+          store.setCurrentModel(models[0].value);
+        }
+      }
+    }).catch(() => {});
   }, []);
 
   const loadMessages = useCallback(async (convId) => {

@@ -1,7 +1,7 @@
-"""LiteLLM 统一调用封装 —— 含 token 预算截断 + Anthropic prompt caching"""
+"""LLM 统一调用封装 —— 含 token 预算截断 + Anthropic prompt caching"""
 import asyncio, json
 from typing import AsyncGenerator, Optional
-import litellm
+from services.llm_client import completion, acompletion
 from app_config.encryption import ConfigEncryption
 from app_config.providers import PROVIDERS
 from app_config.settings import CONFIG_DIR
@@ -16,7 +16,7 @@ MAX_HISTORY_MESSAGES = 20   # 最多保留的消息对数
 def _get_model_string(provider_key: str, model_name: str) -> str:
     provider = PROVIDERS.get(provider_key)
     if not provider: raise ValueError(f"未知的提供商: {provider_key}")
-    prefix = provider["litellm_prefix"]
+    prefix = provider["api_prefix"]
     return model_name if model_name.startswith(prefix) else f"{prefix}{model_name}"
 
 
@@ -127,7 +127,7 @@ def test_connection(provider_key: str, api_key: str, base_url=None, model=None) 
     if not info.get("is_native", True) and (base_url or info.get("base_url")):
         kwargs["api_base"] = base_url or info["base_url"]
     try:
-        resp = litellm.completion(model=model_str, messages=[{"role": "user", "content": "Hi"}], max_tokens=5, **kwargs)
+        resp = completion(model=model_str, messages=[{"role": "user", "content": "Hi"}], max_tokens=5, **kwargs)
         return True, f"连接成功！模型响应: {resp.choices[0].message.content[:50]}"
     except Exception as e:
         return False, f"连接失败: {str(e)}"
@@ -156,7 +156,7 @@ async def chat_stream(
             if model_params.get(k) is not None: kwargs[k] = model_params[k]
 
     try:
-        resp = await litellm.acompletion(
+        resp = await acompletion(
             model=model, messages=full_msgs, stream=True,
             **(dict(tools=tools) if tools else {}), **kwargs)
         async for chunk in resp:
@@ -181,7 +181,7 @@ def chat_non_stream(messages, model, provider_key, long_term_context="",
         for k in ("temperature", "top_p", "max_tokens"):
             if model_params.get(k) is not None: kwargs[k] = model_params[k]
     try:
-        resp = litellm.completion(model=model, messages=full_msgs, **kwargs)
+        resp = completion(model=model, messages=full_msgs, **kwargs)
         return resp.choices[0].message.content
     except Exception as e:
         return f"[错误] {str(e)}"
@@ -207,7 +207,7 @@ importance 为 1-10 的整数，越高表示越重要。
     if not kwargs.get("api_key"):
         return []
     try:
-        resp = litellm.completion(
+        resp = completion(
             model=model, messages=[{"role": "user", "content": prompt}],
             max_tokens=500, temperature=0.1, **kwargs)
         content = resp.choices[0].message.content.strip()
@@ -242,7 +242,7 @@ def generate_summary(messages: list[dict], model: str, provider_key: str) -> str
     if not kwargs.get("api_key"):
         return ""
     try:
-        resp = litellm.completion(
+        resp = completion(
             model=model, messages=[{"role": "user", "content": prompt}],
             max_tokens=100, temperature=0.3, **kwargs)
         return resp.choices[0].message.content.strip()
@@ -264,7 +264,7 @@ def score_memory(text: str, model: str, provider_key: str) -> int:
     if not kwargs.get("api_key"):
         return 5
     try:
-        resp = litellm.completion(
+        resp = completion(
             model=model, messages=[{"role": "user", "content": prompt}],
             max_tokens=10, temperature=0.1, **kwargs)
         content = resp.choices[0].message.content.strip()
