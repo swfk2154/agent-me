@@ -1068,7 +1068,7 @@ def _interactive_config():
                 console.print(f"[green]✓[/] {provider_name} 配置已保存")
                 if set_default:
                     r2 = _api_post(client, "/config/default", json={"provider_key": provider_key})
-                    if r2 and r2.ok:
+                    if r2 and r2.status_code == 200:
                         console.print(f"[green]✓[/] {provider_name} 已设为默认")
             else:
                 console.print(f"[red]保存失败: {r.status_code}[/]")
