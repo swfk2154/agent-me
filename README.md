@@ -32,6 +32,16 @@ cd backend && pip install -r requirements.txt    # Python 依赖
 cd frontend && npm install                        # 前端依赖
 ```
 
+## 界面预览
+
+**Web 端**
+
+![Web 界面](docs/screenshot-web.png)
+
+**CLI 端**
+
+![CLI 界面](docs/screenshot-cli.png)
+
 ## 功能清单
 
 | 功能 | 说明 |
