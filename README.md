@@ -4,19 +4,46 @@
 
 ## 快速开始
 
+### Windows (PowerShell)
+
 ```powershell
 # 右键 → "使用 PowerShell 运行"
 start.ps1          # 后台启动后端 + 前端，~3s 就绪，无窗口
 stop.ps1           # 关闭所有服务
-
-# Web 端
-# 浏览器打开 http://localhost:3000 → 设置 → 配 API Key → 开始
-
-# CLI 端 (先启动后端)
-cd cli; pip install -e .      # PowerShell（仅首次）
-agent-me chat                  # 交互式，启动时可选模型
-agent-me ask "问题"             # 一次性问答，-m deepseek 跳过选择
 ```
+
+### macOS / Linux (bash)
+
+**启动（两个终端窗口）**
+
+终端 1 — 后端：
+```bash
+cd backend
+uvicorn main:app --port 8000
+```
+
+终端 2 — 前端：
+```bash
+cd frontend
+npm run dev
+```
+
+**关闭**
+```bash
+pkill -f "uvicorn main:app"    # 关闭后端
+pkill -f "npm run dev"          # 关闭前端
+```
+
+### 开始使用
+
+1. **Web 端**：浏览器打开 http://localhost:3000 → 设置 → 配 API Key → 开始
+2. **CLI 端**（先启动后端）：
+   ```bash
+   cd cli && pip install -e .    # 仅首次（macOS/Linux）
+   cd cli; pip install -e .      # 仅首次（PowerShell）
+   agent-me chat                  # 交互式，启动时可选模型
+   agent-me ask "问题"             # 一次性问答，-m deepseek 跳过选择
+   ```
 
 **依赖安装**（仅首次）：
 
