@@ -14,12 +14,19 @@ stop.ps1           # 关闭所有服务
 
 ### macOS / Linux (bash)
 
-**启动（两个终端窗口）**
+**一键启动（推荐）**
+```bash
+chmod +x start.sh   # 仅首次赋予执行权限
+./start.sh          # 后台启动后端 + 前端
+./stop.sh           # 关闭所有服务
+```
+
+**手动启动（两个终端窗口）**
 
 终端 1 — 后端：
 ```bash
 cd backend
-uvicorn main:app --port 8000
+python3 -m uvicorn main:app --port 8000
 ```
 
 终端 2 — 前端：
@@ -29,9 +36,17 @@ npm run dev
 ```
 
 **关闭**
+
+方案 A — 按端口关闭（推荐，macOS/Linux 通用）：
 ```bash
-pkill -f "uvicorn main:app"    # 关闭后端
-pkill -f "npm run dev"          # 关闭前端
+lsof -ti:8000 | xargs kill -9 2>/dev/null   # 关闭后端
+lsof -ti:3000 | xargs kill -9 2>/dev/null   # 关闭前端
+```
+
+方案 B — 按进程名关闭：
+```bash
+pkill -f "uvicorn"     # 关闭后端
+pkill -f "vite"         # 关闭前端（npm run dev 实际启动 vite）
 ```
 
 ### 开始使用
