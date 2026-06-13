@@ -40,7 +40,7 @@ export default function Sidebar() {
       </div>
 
       {/* 新对话按钮 */}
-      <button onClick={createConversation} disabled={creating}
+      <button onClick={() => createConversation()} disabled={creating}
         className="mx-3 mt-3 flex items-center justify-center gap-2 btn-primary disabled:opacity-50 disabled:cursor-not-allowed">
         {creating ? (
           <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
