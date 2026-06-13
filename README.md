@@ -34,70 +34,59 @@ npm config set registry https://registry.npmmirror.com
 
 | 版本 | 安装大小 | 功能差异 |
 |------|---------|---------|
-| **轻量版（默认）** | ~50MB | 多轮对话、联网搜索、命令执行、任务管理、写作助手、CLI、用户画像 |
+| **轻量版（推荐新手）** | ~50MB | 多轮对话、联网搜索、命令执行、任务管理、写作助手、CLI、用户画像 |
 | **完整版** | ~400MB | 轻量版全部 + **向量语义检索长期记忆** + **文件上传分析（PDF/DOCX/TXT）** |
 
-> 首次安装建议先用轻量版，体验核心功能。如需文件分析或语义记忆搜索，再升级到完整版。
+> 首次安装建议先用轻量版。如需文件分析或语义记忆搜索，再升级完整版：`pip install -r requirements-full.txt`
 
-#### 安装方式
+#### 安装步骤
 
-**方式 A：一键安装脚本（最快，推荐）**
+**第 1 步：换国内镜像源（一次配置，永久生效）**
 
 ```bash
-# Windows — 轻量版（默认，约 50MB）
-.\install.ps1 -UseMirror
+# pip 换清华源
+pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
+pip config set global.trusted-host pypi.tuna.tsinghua.edu.cn
 
-# Windows — 完整版（含向量记忆 + 文件分析，约 400MB）
-.\install.ps1 -UseMirror -FullInstall
-
-# macOS / Linux — 轻量版（默认）
-chmod +x install.sh && ./install.sh --mirror
-
-# macOS / Linux — 完整版
-chmod +x install.sh && ./install.sh --mirror --full
+# npm 换淘宝源
+npm config set registry https://registry.npmmirror.com
 ```
 
-脚本自动处理：环境检测 → 换源 → 升级 pip/wheel → 优先安装预编译包 → 并行安装前后端。
-
-**方式 B：手动安装**
-
-**Windows — 推荐用 CMD（避开 PowerShell 执行策略问题）**
-
-按 `Win + R`，输入 `cmd` 回车，打开 **两个 CMD 窗口**：
-
-| 窗口 1 — 后端 | 窗口 2 — 前端 |
-|---|---|
-| `cd backend` | `cd frontend` |
-| `pip install -r requirements.txt --prefer-binary` | `npm install` |
-
-完整版（需要向量记忆 + 文件分析）：`pip install -r requirements-full.txt --prefer-binary`
-
-**macOS / Linux — 终端**
+**第 2 步：安装后端依赖（CMD / 终端）**
 
 ```bash
-# 终端 1 — 后端（轻量版，约 50MB）
-cd backend && pip install -r requirements.txt --prefer-binary
+# 进入后端目录
+cd backend
 
-# 完整版（约 400MB，ONNX 嵌入替代 PyTorch）
-cd backend && pip install -r requirements-full.txt --prefer-binary
+# 轻量版（推荐新手，约 50MB）
+pip install -r requirements.txt --prefer-binary
 
-# 终端 2 — 前端（并行执行）
-cd frontend && npm install
+# 完整版（需要向量记忆 + 文件分析，约 400MB）
+pip install -r requirements-full.txt --prefer-binary
+```
+
+**第 3 步：安装前端依赖（另一个 CMD / 终端窗口）**
+
+```bash
+cd frontend
+npm install
 ```
 
 > `--prefer-binary` 表示优先安装预编译的 wheel 包，避免从源码编译导致失败或极慢。
 
-**CLI 工具安装（可选，后端装完后执行）**：
+**第 4 步（可选）：安装 CLI 工具**
 
 ```bash
 cd cli
 pip install -e . --prefer-binary
 ```
 
-**方式 C：使用虚拟环境（避免污染全局 Python）**
+---
+
+#### 使用虚拟环境（推荐，避免污染全局 Python）
 
 ```bash
-# 创建虚拟环境
+# 创建虚拟环境（在项目根目录执行）
 python -m venv .venv
 
 # Windows 激活
@@ -106,7 +95,7 @@ python -m venv .venv
 # macOS / Linux 激活
 source .venv/bin/activate
 
-# 激活后再执行方式 A 或 B 的安装步骤
+# 激活后，再执行上面的第 2~4 步安装依赖
 ```
 
 #### 常见安装问题
