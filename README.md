@@ -177,15 +177,44 @@ taskkill /F /PID 12345
 
 ### 4. 开始使用
 
-1. **Web 端**：浏览器打开 http://localhost:3000 → 设置 → 配置 API Key → 开始对话
-2. **CLI 端**（需先启动后端）：
-   ```bash
-   agent-me config list            # 查看提供商列表
-   agent-me config set openai      # 交互式配置 API Key（输入时隐藏，安全）
-   agent-me config test openai     # 测试连接
-   agent-me chat                   # 交互式聊天，启动时可选模型
-   agent-me ask "你的问题"         # 一次性问答，-m 指定模型
-   ```
+**Web 端**
+
+1. 浏览器打开 `http://localhost:3000`
+2. 左侧导航栏点击 **设置** → **LLM 配置**
+3. 选择提供商（如 OpenAI、DeepSeek），输入 API Key，点击 **保存配置**
+4. 点击 **测试** 验证连接是否正常
+5. 确保该提供商 **已启用**（绿色开关），可设为默认
+6. 切换回 **对话** 标签，右上角下拉框选择刚配置好的模型
+7. 输入消息开始对话
+
+> API Key 加密存储在本地，不会上传。刷新页面后模型选择会保留。
+
+**CLI 端**
+
+```bash
+# 查看后端状态（确认服务已启动）
+agent-me status
+
+# 查看已配置的提供商列表
+agent-me config list
+
+# 配置 API Key（交互式输入，输入时隐藏不显示）
+agent-me config set openai
+
+# 测试连接
+agent-me config test openai
+
+# 交互式聊天（启动时选模型）
+agent-me chat
+
+# 一次性问答
+agent-me ask "今天的科技新闻有哪些"
+
+# 指定模型一次性问答
+agent-me ask "用 Python 写一个排序算法" -m gpt-4o
+```
+
+> CLI 端依赖后端服务（`http://localhost:8000`），需先通过 `.\start.ps1` 启动后端。
 
 ## 界面预览
 

@@ -1,5 +1,13 @@
 """agent-me CLI v2.1 — 参考 OpenCode / Hermes / Codex / Claude Code 设计"""
-import sys, os, json, signal, subprocess, threading, time, readline
+import sys, os, json, signal, subprocess, threading, time
+# Windows 兼容：readline 是 Unix 内置模块，Windows 上需要 pyreadline3
+try:
+    import readline
+except ImportError:
+    try:
+        import pyreadline3 as readline
+    except ImportError:
+        readline = None
 from pathlib import Path
 from typing import Optional, List, Dict, Any
 from contextlib import contextmanager
