@@ -4,21 +4,67 @@
 
 ## 快速开始
 
-### Windows (PowerShell)
+### 1. 克隆仓库
 
-```powershell
-# 右键 → "使用 PowerShell 运行"
-start.ps1          # 后台启动后端 + 前端，~3s 就绪，无窗口
-stop.ps1           # 关闭所有服务
+```bash
+git clone https://github.com/swfk2154/agent-me.git
+cd agent-me
 ```
 
-### macOS / Linux (bash)
+### 2. 安装依赖
 
-**一键启动（推荐）**
+**Windows (PowerShell)**
+
+```powershell
+# Python 后端依赖
+cd backend
+pip install -r requirements.txt
+
+# Node.js 前端依赖
+cd ..\frontend
+npm install
+
+# CLI 工具（可选）
+cd ..\cli
+pip install -e .
+```
+
+**macOS / Linux (bash)**
+
 ```bash
-chmod +x start.sh   # 仅首次赋予执行权限
-./start.sh          # 后台启动后端 + 前端
-./stop.sh           # 关闭所有服务
+# Python 后端依赖
+cd backend && pip install -r requirements.txt
+
+# Node.js 前端依赖
+cd ../frontend && npm install
+
+# CLI 工具（可选）
+cd ../cli && pip install -e .
+```
+
+### 3. 启动服务
+
+**Windows — 一键启动（推荐）**
+
+```powershell
+# 在 PowerShell 中运行，后台启动后端 + 前端，~3s 就绪
+.\start.ps1
+
+# 关闭服务
+.\stop.ps1
+```
+
+**macOS / Linux — 一键启动（推荐）**
+
+```bash
+# 赋予执行权限（仅首次）
+chmod +x start.sh stop.sh
+
+# 后台启动后端 + 前端
+./start.sh
+
+# 关闭服务
+./stop.sh
 ```
 
 **手动启动（两个终端窗口）**
@@ -35,44 +81,26 @@ cd frontend
 npm run dev
 ```
 
-**关闭**
+**关闭手动启动的进程**
 
-方案 A — 按端口关闭（推荐，macOS/Linux 通用）：
 ```bash
+# 方案 A — 按端口关闭（推荐）
 lsof -ti:8000 | xargs kill -9 2>/dev/null   # 关闭后端
 lsof -ti:3000 | xargs kill -9 2>/dev/null   # 关闭前端
+
+# 方案 B — 按进程名关闭
+pkill -f "uvicorn"   # 关闭后端
+pkill -f "vite"      # 关闭前端
 ```
 
-方案 B — 按进程名关闭：
-```bash
-pkill -f "uvicorn"     # 关闭后端
-pkill -f "vite"         # 关闭前端（npm run dev 实际启动 vite）
-```
+### 4. 开始使用
 
-### 开始使用
-
-1. **Web 端**：浏览器打开 http://localhost:3000 → 设置 → 配 API Key → 开始
-2. **CLI 端**（先启动后端）：
+1. **Web 端**：浏览器打开 http://localhost:3000 → 设置 → 配置 API Key → 开始对话
+2. **CLI 端**（需先启动后端）：
    ```bash
-   cd cli && pip install -e .    # 仅首次（macOS/Linux）
-   cd cli; pip install -e .      # 仅首次（PowerShell）
-   agent-me chat                  # 交互式，启动时可选模型
-   agent-me ask "问题"             # 一次性问答，-m deepseek 跳过选择
+   agent-me chat              # 交互式聊天，启动时可选模型
+   agent-me ask "你的问题"     # 一次性问答，-m 指定模型
    ```
-
-**依赖安装**（仅首次）：
-
-**Windows (PowerShell)**
-```powershell
-cd backend; pip install -r requirements.txt    # Python 依赖
-cd frontend; npm install                        # 前端依赖
-```
-
-**macOS / Linux (bash)**
-```bash
-cd backend && pip install -r requirements.txt    # Python 依赖
-cd frontend && npm install                        # 前端依赖
-```
 
 ## 界面预览
 
