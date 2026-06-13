@@ -6,6 +6,8 @@ cd "$SCRIPT_DIR"
 
 echo "=== agent-me v2.1 ==="
 
+mkdir -p backend/storage/logs
+
 # Check if ports are occupied
 check_port() {
     lsof -ti:$1 2>/dev/null | head -1
