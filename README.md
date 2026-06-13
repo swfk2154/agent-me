@@ -68,7 +68,7 @@ pip install -r requirements-full.txt --prefer-binary
 **第 3 步：安装前端依赖（另一个 CMD / 终端窗口）**
 
 ```bash
-cd frontend
+cd ../frontend
 npm install
 ```
 
@@ -77,7 +77,7 @@ npm install
 **第 4 步（可选）：安装 CLI 工具**
 
 ```bash
-cd cli
+cd ../cli
 pip install -e . --prefer-binary
 ```
 

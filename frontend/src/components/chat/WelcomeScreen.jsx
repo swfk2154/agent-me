@@ -52,7 +52,7 @@ export default function WelcomeScreen({ onCreate }) {
                 onKeyDown={(e) => { if (e.key === "Enter" && e.target.value.trim()) { onCreate(); } }}
               />
             </div>
-            <button onClick={onCreate} className="btn-primary shrink-0 flex items-center gap-1">
+            <button onClick={() => onCreate()} className="btn-primary shrink-0 flex items-center gap-1">
               开始 <ArrowRight className="w-3 h-3" />
             </button>
           </div>
