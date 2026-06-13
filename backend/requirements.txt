@@ -1,5 +1,5 @@
-# agent-me 核心依赖（轻量版，约 50MB）
-# 支持：多轮对话、联网搜索、命令执行、任务管理、写作助手、CLI
+# agent-me core deps (lightweight, ~50MB)
+# supports: chat, web search, commands, tasks, writing, CLI
 
 fastapi==0.115.6
 uvicorn[standard]==0.34.0
