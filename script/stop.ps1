@@ -1,7 +1,8 @@
 # agent-me Shutdown Script (Windows)
 # Stop backend + frontend started by start.ps1
 
-$root = Split-Path -Parent $MyInvocation.MyCommand.Path
+$scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
+$root = (Get-Item $scriptRoot).Parent.FullName
 
 function Write-I($m)  { Write-Host "   $m" -ForegroundColor Gray }
 function Write-O($m)  { Write-Host "   $m" -ForegroundColor Green }

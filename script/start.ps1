@@ -1,7 +1,8 @@
 # agent-me Startup Script (Windows)
 # Start backend + frontend. Window stays open; closing it won't stop services.
 
-$root = Split-Path -Parent $MyInvocation.MyCommand.Path
+$scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
+$root = (Get-Item $scriptRoot).Parent.FullName
 $ErrorActionPreference = "Stop"
 
 function Write-I($m)  { Write-Host "   $m" -ForegroundColor Gray }

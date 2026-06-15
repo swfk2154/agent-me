@@ -26,6 +26,9 @@ done
 
 start_time=$(date +%s)
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+
 step() {
     echo ""
     echo "==> $1"
@@ -74,11 +77,11 @@ ok "Node.js $(node --version)"
 PYTHON_CMD="python3"
 if [[ "$USE_VENV" == true ]]; then
     step "创建虚拟环境"
-    if [[ ! -d ".venv" ]]; then
-        python3 -m venv .venv
+    if [[ ! -d "$ROOT_DIR/.venv" ]]; then
+        python3 -m venv "$ROOT_DIR/.venv"
     fi
-    source .venv/bin/activate
-    PYTHON_CMD=".venv/bin/python"
+    source "$ROOT_DIR/.venv/bin/activate"
+    PYTHON_CMD="$ROOT_DIR/.venv/bin/python"
     ok "已激活虚拟环境"
 fi
 
@@ -122,10 +125,8 @@ fi
 
 # 后端
 (
-    cd backend
-    # 先升级 pip/setuptools/wheel，避免编译 C 扩展时失败
+    cd "$ROOT_DIR/backend"
     $PYTHON_CMD -m pip install --upgrade pip setuptools wheel >/dev/null 2>&1
-    # 安装依赖：优先使用预编译 wheel
     $PYTHON_CMD -m pip install -r $REQ_FILE $PIP_EXTRA_ARGS
     echo "[后端] 安装完成"
 ) &
@@ -133,7 +134,7 @@ BACKEND_PID=$!
 
 # 前端
 (
-    cd frontend
+    cd "$ROOT_DIR/frontend"
     npm install
     echo "[前端] 安装完成"
 ) &
@@ -164,9 +165,9 @@ fi
 read -rp "是否安装 CLI 工具？(y/N) " install_cli
 if [[ "$install_cli" =~ ^[Yy]$ ]]; then
     step "安装 CLI 工具"
-    cd cli
+    cd "$ROOT_DIR/cli"
     $PYTHON_CMD -m pip install -e . --prefer-binary
-    cd ..
+    cd "$ROOT_DIR"
     ok "CLI 安装完成"
 fi
 

@@ -10,6 +10,9 @@ param(
 $ErrorActionPreference = "Stop"
 $startTime = Get-Date
 
+$scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
+$root = (Get-Item $scriptRoot).Parent.FullName
+
 function Write-Step($m)  { Write-Host "`n==> $m" -ForegroundColor Cyan }
 function Write-Info($m)   { Write-Host "   $m" -ForegroundColor Gray }
 function Write-Ok($m)     { Write-Host "   $m" -ForegroundColor Green }
@@ -113,7 +116,7 @@ if ($FullInstall) {
 } else {
     Write-Info "Lightweight core ~50MB. For vector memory + file analysis, add -FullInstall"
 }
-Set-Location backend
+Set-Location "$root\backend"
 
 Write-Info "Upgrading pip / setuptools / wheel..."
 & $pythonCmd -m pip install --upgrade pip setuptools wheel 2>&1 | Out-Null
@@ -138,11 +141,11 @@ try {
 }
 
 Write-Ok "Backend dependencies installed"
-Set-Location ..
+Set-Location "$root"
 
 # ==================== 5. Install frontend ====================
 Write-Step "Installing frontend dependencies"
-Set-Location frontend
+Set-Location "$root\frontend"
 
 Write-Info "Installing Node packages..."
 try {
@@ -157,15 +160,15 @@ try {
 }
 
 Write-Ok "Frontend dependencies installed"
-Set-Location ..
+Set-Location "$root"
 
 # ==================== 6. Install CLI (optional) ====================
 $installCli = Read-Host "`nInstall CLI tools? (y/N)"
 if ($installCli -match "^[Yy]") {
     Write-Step "Installing CLI"
-    Set-Location cli
-    & $pythonCmd -m pip install -e . --prefer-binary
-    Set-Location ..
+    Set-Location "$root\cli"
+    & $pythonCmd -m pip install -e "$root\cli" --prefer-binary
+    Set-Location "$root"
     Write-Ok "CLI installed"
 }
 

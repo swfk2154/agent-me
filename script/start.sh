@@ -1,12 +1,12 @@
 #!/bin/bash
 # agent-me Startup Script — macOS / Linux
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$SCRIPT_DIR"
 
 echo "=== agent-me v2.1 ==="
 
-mkdir -p backend/storage/logs
+mkdir -p "$SCRIPT_DIR/backend/storage/logs"
 
 # Check if ports are occupied
 check_port() {
@@ -33,14 +33,14 @@ echo "  Dependencies OK"
 echo ""
 
 # Start backend
-cd backend
-nohup python3 -m uvicorn main:app --port 8000 > ../backend/storage/logs/backend.log 2>&1 &
+cd "$SCRIPT_DIR/backend"
+nohup python3 -m uvicorn main:app --port 8000 > "$SCRIPT_DIR/backend/storage/logs/backend.log" 2>&1 &
 BACKEND_PID=$!
 echo "Backend  http://localhost:8000 (PID $BACKEND_PID)"
 
 # Start frontend
-cd ../frontend
-nohup npm run dev > ../backend/storage/logs/frontend.log 2>&1 &
+cd "$SCRIPT_DIR/frontend"
+nohup npm run dev > "$SCRIPT_DIR/backend/storage/logs/frontend.log" 2>&1 &
 FRONTEND_PID=$!
 echo "Frontend http://localhost:3000 (PID $FRONTEND_PID)"
 
