@@ -6,6 +6,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from app_config.logging_config import setup_logging, LOG_DIR
 
 logger = setup_logging()
@@ -16,9 +17,22 @@ from routes import chat, config_routes, files, memory, tasks, writing, skills, c
 
 app = FastAPI(title="agent-me", version="2.1.0")
 
+# 前端构建产物静态托管（npm run build 后生效，单进程部署用）
+FRONTEND_DIST = Path(__file__).resolve().parent.parent / "frontend" / "dist"
+if FRONTEND_DIST.is_dir():
+    app.mount("/", StaticFiles(directory=str(FRONTEND_DIST), html=True), name="frontend")
+    logger.info(f"前端静态文件已挂载: {FRONTEND_DIST}")
+    origins = ["http://localhost:8000", "http://127.0.0.1:8000"]
+else:
+    logger.info("前端 dist 不存在，仅 API 模式运行（需额外启动 Vite dev server）")
+    origins = []
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_origins=[
+        "http://localhost:3000", "http://127.0.0.1:3000",
+        *origins,
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -76,14 +76,6 @@ async def run_agent(req: AgentRunRequest):
 @router.get("/tools")
 async def list_tools():
     """列出所有可用的 Agent 工具"""
-    from services.agent_loop import AGENT_TOOLS
-    return {
-        "tools": [
-            {
-                "name": t["function"]["name"],
-                "description": t["function"]["description"],
-                "parameters": t["function"].get("parameters", {}),
-            }
-            for t in AGENT_TOOLS
-        ]
-    }
+    from services.tool_service import get_tool_registry
+    registry = get_tool_registry()
+    return {"tools": registry.list_specs()}

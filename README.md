@@ -1,6 +1,6 @@
 # agent-me v2.2 — Universal Personal AI Agent
 
-A full-stack AI assistant with multi-LLM support, smart memory, file analysis, automated tool calling, Web/CLI dual interface. All data stored locally.
+A fully local-deployed personal AI agent. Multi-LLM support, smart memory, file analysis, automated tool calling, Web/CLI dual interface. All conversation data stays on your machine — privacy you can control.
 
 ---
 
