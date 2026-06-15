@@ -122,3 +122,20 @@ async def set_default(req: SetDefaultRequest):
     models_list = config[req.provider_key].get("models", [])
     default_model = models_list[0] if models_list else "gpt-4o-mini"
     return {"success": True, "model": f"{req.provider_key}/{default_model}"}
+
+
+@router.get("/news-api")
+async def get_news_api_config():
+    """获取 NewsAPI 配置"""
+    config = _encrypt.load_config()
+    key = config.get("_news", {}).get("api_key", "")
+    return {"configured": bool(key), "masked_key": ConfigEncryption.mask_key(key)}
+
+
+@router.post("/news-api")
+async def save_news_api_config(data: dict):
+    """保存 NewsAPI Key"""
+    config = _encrypt.load_config()
+    config["_news"] = {"api_key": data.get("api_key", "")}
+    _encrypt.save_config(config)
+    return {"ok": True}

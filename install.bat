@@ -140,12 +140,26 @@ echo   前端依赖安装完成
 popd
 echo.
 
+REM ==================== 6. 安装 CLI ====================
+echo [6/6] 安装 CLI 工具...
+pushd "%~dp0cli"
+%PYTHON_CMD% -m pip install -e . --prefer-binary >nul 2>&1
+if %errorlevel% equ 0 (
+    echo   CLI 安装完成（执行 agent-me --help 测试）
+) else (
+    echo   CLI 安装失败，可手动: cd cli ^&^& pip install -e .
+)
+popd
+echo.
+
 REM ==================== 完成 ====================
 echo ==================================
 echo   安装完成！
 echo.
 echo   启动: start.bat
 echo   停止: stop.bat
+echo.
+echo   CLI: agent-me --help
 echo ==================================
 echo.
 pause

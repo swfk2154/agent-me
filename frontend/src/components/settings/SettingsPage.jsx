@@ -17,6 +17,7 @@ const SEARCH_LIST = [
   { key: "duckduckgo", name: "DuckDuckGo", description: "免费即时搜索，无需 API Key", needs_api_key: false, api_key_url: "", is_custom: false },
   { key: "tavily", name: "Tavily", description: "专为 AI Agent 优化的搜索 API", needs_api_key: true, api_key_url: "https://app.tavily.com/home", is_custom: false },
   { key: "brave", name: "Brave Search", description: "Brave 搜索引擎 API", needs_api_key: true, api_key_url: "https://api.search.brave.com/app/keys", is_custom: false },
+  { key: "bing", name: "Bing Search", description: "微软 Bing 搜索 API（免费 1000次/月）", needs_api_key: true, api_key_url: "https://portal.azure.com/#create/microsoft.bingsearch", is_custom: false },
   { key: "serpapi", name: "SerpAPI", description: "Google 搜索结果 API", needs_api_key: true, api_key_url: "https://serpapi.com/manage-api-key", is_custom: false },
   { key: "serper", name: "Serper.dev", description: "快速 Google 搜索 API（免费额度 2500次/月）", needs_api_key: true, api_key_url: "https://serper.dev/api-key", is_custom: false },
   { key: "searxng", name: "SearXNG (自建)", description: "开源元搜索引擎，可 Docker 自建 — github.com/searxng/searxng", needs_api_key: false, api_key_url: "https://github.com/searxng/searxng", is_custom: false },

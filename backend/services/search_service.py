@@ -91,6 +91,24 @@ def _search_brave(query: str, api_key: str, max_results: int = 5) -> list[dict]:
         return [{"title": "Brave 搜索失败", "snippet": str(e), "url": ""}]
 
 
+def _search_bing(query: str, api_key: str, max_results: int = 5) -> list[dict]:
+    try:
+        resp = httpx.get("https://api.bing.microsoft.com/v7.0/search",
+            params={"q": query, "count": max_results, "mkt": "zh-CN"},
+            headers={"Ocp-Apim-Subscription-Key": api_key}, timeout=15)
+        data = resp.json()
+        results = []
+        for r in data.get("webPages", {}).get("value", [])[:max_results]:
+            results.append({
+                "title": r.get("name", ""),
+                "snippet": r.get("snippet", ""),
+                "url": r.get("url", ""),
+            })
+        return results
+    except Exception as e:
+        return [{"title": "Bing 搜索失败", "snippet": str(e), "url": ""}]
+
+
 def _search_serpapi(query: str, api_key: str, max_results: int = 5) -> list[dict]:
     try:
         resp = httpx.get("https://serpapi.com/search",
@@ -153,6 +171,8 @@ def search_web(query: str, max_results: int = 5) -> list[dict]:
         return _search_tavily(query, api_key, max_results)
     elif provider == "brave" and api_key:
         return _search_brave(query, api_key, max_results)
+    elif provider == "bing" and api_key:
+        return _search_bing(query, api_key, max_results)
     elif provider == "serpapi" and api_key:
         return _search_serpapi(query, api_key, max_results)
     elif provider == "serper" and api_key:
@@ -202,6 +222,10 @@ def test_search_connection(provider_key: str, api_key: str = "", base_url: str =
         results = _search_brave("test", api_key, max_results=1)
         ok = len(results) > 0 and "失败" not in results[0].get("title", "")
         return ok, "Brave 连接正常" if ok else "无结果"
+    elif provider_key == "bing" and api_key:
+        results = _search_bing("test", api_key, max_results=1)
+        ok = len(results) > 0 and "失败" not in results[0].get("title", "")
+        return ok, "Bing 连接正常" if ok else "无结果"
     elif provider_key == "serpapi" and api_key:
         results = _search_serpapi("test", api_key, max_results=1)
         ok = len(results) > 0 and "失败" not in results[0].get("title", "")

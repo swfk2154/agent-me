@@ -132,6 +132,35 @@ AGENT_TOOLS = [
             }
         }
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_weather",
+            "description": "查询天气信息。支持城市名称如「北京」「Shanghai」「London」。返回温度、湿度、风速、天气状况等。",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "city": {"type": "string", "description": "城市名称，如 北京、Shanghai、Tokyo、London"}
+                },
+                "required": ["city"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_news",
+            "description": "获取最新新闻资讯。按关键词搜索最新新闻。返回标题、摘要、来源、发布时间。",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string", "description": "新闻关键词，如 科技、AI、股票、体育；或指定话题"},
+                    "max_results": {"type": "integer", "description": "返回条数", "default": 5}
+                },
+                "required": ["query"]
+            }
+        }
+    },
 ]
 
 
@@ -397,6 +426,87 @@ async def _tool_browser_navigate(args: dict) -> str:
         return f"浏览器错误: {result.get('error', '未知错误')}"
 
 
+async def _tool_get_weather(args: dict) -> str:
+    """查询天气 — 使用 wttr.in（免费，无需 API Key）"""
+    city = args.get("city", "")
+    if not city:
+        return "错误: city 不能为空"
+    from urllib.request import Request, urlopen
+    from urllib.parse import quote
+    try:
+        url = f"https://wttr.in/{quote(city)}?format=%C|%t|%h|%w|%p"
+        req = Request(url, headers={"User-Agent": "curl/8.0"})
+        with urlopen(req, timeout=10) as resp:
+            raw = resp.read().decode("utf-8", errors="replace").strip()
+        parts = raw.split("|")
+        if len(parts) >= 1 and parts[0]:
+            weather = parts[0]
+            temp = parts[1] if len(parts) > 1 else "N/A"
+            humidity = parts[2] if len(parts) > 2 else "N/A"
+            wind = parts[3] if len(parts) > 3 else "N/A"
+            precip = parts[4] if len(parts) > 4 else "N/A"
+            return (
+                f"🌍 {city} 天气\n"
+                f"状况: {weather}\n"
+                f"温度: {temp}\n"
+                f"湿度: {humidity}\n"
+                f"风速: {wind}\n"
+                f"降水量: {precip}"
+            )
+        return f"未获取到 {city} 的天气信息"
+    except Exception as e:
+        return f"天气查询失败: {e}"
+
+
+async def _tool_get_news(args: dict) -> str:
+    """获取新闻 — 使用 NewsAPI（免费版需注册 Key, 配置在后端存储中）"""
+    query = args.get("query", "")
+    max_results = min(args.get("max_results", 5), 10)
+    if not query:
+        return "错误: query 不能为空"
+
+    from app_config.encryption import ConfigEncryption
+    from app_config.settings import CONFIG_DIR
+    enc = ConfigEncryption(CONFIG_DIR)
+    config = enc.load_config()
+    news_api_key = config.get("_news", {}).get("api_key", "")
+
+    if not news_api_key:
+        # 没有配置 NewsAPI Key，回退到 web_search
+        return await _tool_web_search({"query": f"{query} 最新新闻 {datetime.now().strftime('%Y-%m-%d')}"})
+
+    import httpx
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await client.get(
+                "https://newsapi.org/v2/everything",
+                params={
+                    "q": query,
+                    "pageSize": max_results,
+                    "language": "zh",
+                    "sortBy": "publishedAt",
+                    "apiKey": news_api_key,
+                }
+            )
+            data = resp.json()
+            articles = data.get("articles", [])
+            if not articles:
+                return f"未找到关于「{query}」的新闻"
+            lines = [f"📰 {query} 最新新闻:"]
+            for i, a in enumerate(articles[:max_results], 1):
+                title = a.get("title", "")
+                source = a.get("source", {}).get("name", "")
+                desc = (a.get("description") or "")[:100]
+                published = (a.get("publishedAt") or "")[:10]
+                url = a.get("url", "")
+                lines.append(f"\n{i}. {title}")
+                if desc: lines.append(f"   {desc}")
+                lines.append(f"   来源: {source} | {published}")
+            return "\n".join(lines)
+    except Exception as e:
+        return f"新闻查询失败: {e}"
+
+
 # 工具路由表
 TOOL_REGISTRY = {
     "get_current_time": _tool_get_current_time,
@@ -407,6 +517,8 @@ TOOL_REGISTRY = {
     "search_memory": _tool_search_memory,
     "search_files": _tool_search_files,
     "browser_navigate": _tool_browser_navigate,
+    "get_weather": _tool_get_weather,
+    "get_news": _tool_get_news,
 }
 
 

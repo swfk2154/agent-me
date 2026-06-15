@@ -24,6 +24,14 @@ SEARCH_PROVIDERS = {
         "is_default": False,
         "base_url": "https://api.search.brave.com/res/v1/web/search",
     },
+    "bing": {
+        "name": "Bing Search",
+        "description": "微软 Bing 搜索 API（免费 1000次/月，需 Azure 账号）",
+        "api_key_url": "https://portal.azure.com/#create/microsoft.bingsearch",
+        "needs_api_key": True,
+        "is_default": False,
+        "base_url": "https://api.bing.microsoft.com/v7.0/search",
+    },
     "serpapi": {
         "name": "SerpAPI",
         "description": "Google 搜索结果 API",
@@ -58,4 +66,4 @@ SEARCH_PROVIDERS = {
         "is_custom": True,
     },
 }
-SEARCH_PROVIDER_ORDER = ["duckduckgo", "tavily", "brave", "serpapi", "serper", "searxng", "custom"]
+SEARCH_PROVIDER_ORDER = ["duckduckgo", "tavily", "brave", "bing", "serpapi", "serper", "searxng", "custom"]

@@ -44,7 +44,7 @@ if exist "%PID_FILE%" (
 REM ---------- 3. Check dependencies ----------
 if not exist "%~dp0frontend\node_modules" (
     echo [错误] 前端依赖未安装，请先运行 install.bat
-    echo   或手动: cd frontend && npm install
+    echo   或手动: cd frontend ^&^& npm install
     pause
     exit /b 1
 )
@@ -57,7 +57,11 @@ echo 启动后端...
 REM 确保日志目录存在
 if not exist "%~dp0backend\storage\logs" mkdir "%~dp0backend\storage\logs"
 
-start "agent-me-backend" /B python -m uvicorn main:app --port 8000 --host 127.0.0.1 > "%~dp0backend\storage\logs\backend.log" 2>&1
+REM 用 PowerShell 创建真正独立的进程（不绑定当前窗口）
+powershell -Command "Start-Process -FilePath python -ArgumentList '-m uvicorn main:app --port 8000 --host 127.0.0.1' -WorkingDirectory '%~dp0backend' -WindowStyle Hidden -RedirectStandardOutput '%~dp0backend\storage\logs\backend.log' -RedirectStandardError '%~dp0backend\storage\logs\backend.log' -PassThru | Select-Object -ExpandProperty Id" > "%TEMP%\agent-me-backend-pid.txt" 2>&1
+set /p BACKEND_PID=<"%TEMP%\agent-me-backend-pid.txt"
+del "%TEMP%\agent-me-backend-pid.txt"
+echo   后端 PID: %BACKEND_PID%
 
 REM 等后端就绪
 echo 等待后端就绪...
@@ -73,11 +77,19 @@ for /l %%i in (1,1,30) do (
 :ready_done
 if %ready% equ 1 ( echo [OK] 后端就绪 ) else ( echo [警告] 后端可能未就绪 )
 
-REM ---------- 4. Start frontend ----------
+REM ---------- 5. Start frontend ----------
 echo 启动前端...
-start "agent-me-frontend" /B cmd /c "cd /d "%~dp0frontend" && npm run dev > "%~dp0backend\storage\logs\frontend.log" 2>&1"
+powershell -Command "Start-Process -FilePath cmd -ArgumentList '/c cd /d \"%~dp0frontend\" && npm run dev' -WindowStyle Hidden -RedirectStandardOutput '%~dp0backend\storage\logs\frontend.log' -RedirectStandardError '%~dp0backend\storage\logs\frontend.log' -PassThru | Select-Object -ExpandProperty Id" > "%TEMP%\agent-me-frontend-pid.txt" 2>&1
+set /p FRONTEND_PID=<"%TEMP%\agent-me-frontend-pid.txt"
+del "%TEMP%\agent-me-frontend-pid.txt"
+echo   前端 PID: %FRONTEND_PID%
 
-REM ---------- 5. Done ----------
+REM ---------- 6. Save PIDs ----------
+echo %BACKEND_PID% > "%PID_FILE%"
+echo %FRONTEND_PID% >> "%PID_FILE%"
+echo [OK] PIDs saved
+
+REM ---------- 7. Done ----------
 echo.
 echo ==================================
 echo   agent-me 已在后台启动
