@@ -41,42 +41,38 @@ npm config set registry https://registry.npmmirror.com
 
 #### 安装步骤
 
-**第 1 步：换国内镜像源（一次配置，永久生效）**
+**Windows — 一键安装**
 
-```bash
-# pip 换清华源
-pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
-pip config set global.trusted-host pypi.tuna.tsinghua.edu.cn
+> 注意：安装前确保已安装 Python 3.10+ 和 Node.js 18+
 
-# npm 换淘宝源
-npm config set registry https://registry.npmmirror.com
+```cmd
+install.bat                  # 轻量版（推荐，~50MB）
+install.bat --full           # 完整版（含向量记忆+文件分析，~400MB）
+install.bat --mirror         # 国内镜像加速（强烈建议中国用户使用）
+install.bat --full --mirror  # 完整版+镜像
 ```
 
-**第 2 步：安装后端依赖（CMD / 终端）**
+> 如果使用 PowerShell：`.\install.ps1 [-FullInstall] [-UseMirror] [-UseVenv]`
+
+**macOS / Linux — 一键安装**
 
 ```bash
-# 进入后端目录
-cd backend
+chmod +x install.sh && ./install.sh          # 轻量版
+chmod +x install.sh && ./install.sh --full   # 完整版
+```
 
-# 轻量版（推荐新手，约 50MB）
+**手动安装（两个终端窗口）**
+
+```bash
+# 终端 1 — 后端
+cd backend
 pip install -r requirements.txt --prefer-binary
 
-# 完整版（需要向量记忆 + 文件分析，约 400MB）
-pip install -r requirements-full.txt --prefer-binary
-```
-
-**第 3 步：安装前端依赖（另一个 CMD / 终端窗口）**
-
-```bash
+# 终端 2 — 前端
 cd ../frontend
 npm install
-```
 
-> `--prefer-binary` 表示优先安装预编译的 wheel 包，避免从源码编译导致失败或极慢。
-
-**第 4 步（可选）：安装 CLI 工具**
-
-```bash
+# CLI（可选）
 cd ../cli
 pip install -e . --prefer-binary
 ```
@@ -113,17 +109,13 @@ source .venv/bin/activate
 
 **Windows — 一键启动**
 
-> 如果 PowerShell 报"禁止运行脚本"，先执行：`Set-ExecutionPolicy Bypass -Scope Process -Force`
-
-```powershell
-# 在 PowerShell 中运行，后台启动后端 + 前端，~3s 就绪
-.\start.ps1
-
-# 关闭服务
-.\stop.ps1
+```cmd
+start.bat       # 启动后端 + 前端（~3s 就绪）
+stop.bat        # 关闭服务
 ```
 
-> start.ps1 运行后窗口保持打开，可手动关闭（服务不会停止）。停服务请用 stop.ps1。
+> 如果 PowerShell 执行策略允许，也可使用 `.\start.ps1` / `.\stop.ps1`。
+> start.bat 运行后窗口保持打开，可手动关闭（服务不会停止）。停服务请用 stop.bat。
 
 **macOS / Linux — 一键启动（推荐）**
 
@@ -367,12 +359,15 @@ agent-me v2.1 引入了**自动判断模式**，无需手动切换：
 
 ```
 agent-me/
-├── install.ps1               # 一键安装依赖 (Windows)
-├── install.sh                # 一键安装依赖 (macOS/Linux)
-├── start.ps1                 # 一键后台启动 (Windows)
-├── start.sh                  # 一键后台启动 (macOS/Linux)
-├── stop.ps1                  # 一键关闭 (Windows)
-├── stop.sh                   # 一键关闭 (macOS/Linux)
+├── install.bat                # 一键安装依赖 (Windows CMD)
+├── install.ps1                # 一键安装依赖 (Windows PowerShell)
+├── install.sh                 # 一键安装依赖 (macOS/Linux)
+├── start.bat                  # 一键启动 (Windows CMD, 无需改PS策略)
+├── start.ps1                  # 一键启动 (Windows PowerShell)
+├── start.sh                   # 一键启动 (macOS/Linux)
+├── stop.bat                   # 一键关闭 (Windows CMD)
+├── stop.ps1                   # 一键关闭 (Windows PowerShell)
+├── stop.sh                    # 一键关闭 (macOS/Linux)
 ├── backend/
 │   ├── requirements.txt      # 核心依赖（轻量版，~50MB）
 │   ├── requirements-full.txt # 完整依赖（+向量记忆+文件分析，~400MB）

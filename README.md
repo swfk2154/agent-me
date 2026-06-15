@@ -21,7 +21,7 @@ cd agent-me
 
 ### 2. Install Dependencies
 
-Choose your edition:
+Choose your edition and install method:
 
 | Edition | Size | Features |
 |---------|------|----------|
@@ -30,8 +30,27 @@ Choose your edition:
 
 > Start with Lite. Upgrade later with `pip install -r requirements-full.txt`.
 
+**Windows — One-click install:**
+
+```cmd
+install.bat           # Lite edition
+install.bat --full    # Full edition (+file analysis, ~400MB)
+install.bat --mirror  # With China mirror (recommended for CN users)
+```
+
+> If you prefer PowerShell: `.\install.ps1 [-FullInstall] [-UseMirror] [-UseVenv]`
+
+**macOS / Linux — One-click install:**
+
 ```bash
-# Backend (run in separate terminal)
+chmod +x install.sh && ./install.sh          # Lite
+chmod +x install.sh && ./install.sh --full   # Full
+```
+
+**Manual install (two terminals):**
+
+```bash
+# Backend
 cd backend
 pip install -r requirements.txt --prefer-binary
 
@@ -48,10 +67,12 @@ pip install -e . --prefer-binary
 
 **Windows**
 
-```powershell
-.\start.ps1     # Start backend + frontend (~3s)
-.\stop.ps1      # Stop services
+```cmd
+start.bat       # Start backend + frontend (~3s)
+stop.bat        # Stop services
 ```
+
+> If PowerShell execution policy allows, you can also use `.\start.ps1` / `.\stop.ps1`.
 
 **macOS / Linux**
 
@@ -227,12 +248,15 @@ Requires **Kimi WebBridge**:
 
 ```
 agent-me/
-├── install.ps1               # Windows one-click dependency install
-├── install.sh                # macOS/Linux one-click dependency install
-├── start.ps1                 # Windows one-click start
-├── start.sh                  # macOS/Linux one-click start
-├── stop.ps1                  # Windows stop
-├── stop.sh                   # macOS/Linux stop
+├── install.bat                # Windows one-click dependency install (CMD)
+├── install.ps1                # Windows one-click dependency install (PowerShell)
+├── install.sh                 # macOS/Linux one-click dependency install
+├── start.bat                  # Windows start (CMD, no PowerShell policy needed)
+├── start.ps1                  # Windows start (PowerShell)
+├── start.sh                   # macOS/Linux start
+├── stop.bat                   # Windows stop (CMD)
+├── stop.ps1                   # Windows stop (PowerShell)
+├── stop.sh                    # macOS/Linux stop
 ├── SYSTEM_PROMPT.md          # System prompt loaded at runtime
 ├── backend/
 │   ├── requirements.txt      # Core dependencies (Lite, ~50MB)
