@@ -1,0 +1,37 @@
+* text=auto
+
+# Batch scripts must have CRLF on Windows or CMD will fail
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+
+# Shell scripts must keep LF
+*.sh text eol=lf
+
+# Markdown/text files
+*.md text
+*.json text
+*.yaml text
+*.yml text
+*.toml text
+*.ini text
+*.cfg text
+*.txt text
+
+# Source code
+*.py text diff=python
+*.js text
+*.jsx text
+*.ts text
+*.tsx text
+*.css text
+*.html text
+
+# Binaries
+*.png binary
+*.jpg binary
+*.ico binary
+*.exe binary
+*.dll binary
+*.db binary
+*.db-shm binary
+*.db-wal binary
