@@ -1,4 +1,4 @@
-# agent-me v2.1 — 通用个人 AI Agent
+# agent-me v2.2 — 通用个人 AI Agent
 
 纯本地部署的个人 AI 助手。支持多厂商 LLM、智能记忆、文件分析、自动工具调用、Web/CLI 双端，所有对话数据本地存储，隐私可控。
 
@@ -50,11 +50,16 @@ powershell -ExecutionPolicy Bypass -File script\start.ps1
 powershell -ExecutionPolicy Bypass -File script\stop.ps1
 ```
 
-> **参数说明**：`--mirror` 国内镜像加速（下载 pip/npm 包变快）、`--full` 完整版（文件分析）、`--venv` 虚拟环境。
+> **参数说明**：`--mirror` 国内镜像加速（下载 pip/npm 包变快）、`--full` 完整版（文件分析）、`--venv` 使用 Python 虚拟环境隔离依赖（推荐首次安装使用）。
+
+> **什么是虚拟环境？**
+> 虚拟环境是一个隔离的 Python 环境，在里面安装的包不会影响系统 Python，也不会被其他项目干扰。
+> 激活成功后终端提示符前面会出现 `(venv)` 标记，此时 `pip install` 安装的所有包都锁在这个环境里。
+> 不同 Linux 发行版安装 `venv` 的方式不同（见下方说明）。
 
 > **为什么有 bat 和 ps1 两套？** Windows 默认禁止运行 `.ps1` 脚本（PowerShell 执行策略限制），`.bat` 双击就能运行不受策略限制。功能完全一样，选一套用即可。
 
-> **PowerShell 版**（bat 报错时备用）：
+> **PowerShell 版**：
 > ```powershell
 > # 先执行一次放行当前窗口：
 > Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
@@ -72,12 +77,32 @@ script/start.sh            # 启动
 script/stop.sh             # 停止
 ```
 
-#### 手动安装（各平台通用）
+#### 手动安装（各平台通用）—— 使用虚拟环境（推荐）
 
+虚拟环境可以隔离项目依赖，防止与系统 Python 包冲突。激活成功后终端提示符会出现 `(venv)` 标记。
+
+**Ubuntu / Debian / Linux Mint 系列**（需先安装 venv 插件）：
+```bash
+sudo apt update
+sudo apt install python3-venv
+python3 -m venv .venv          # 创建虚拟环境
+source .venv/bin/activate      # 激活（提示符前出现 .venv）
+```
+
+**CentOS / RHEL / Rocky Linux / Fedora / Arch 系列**（默认自带 venv）：
+```bash
+python3 -m venv .venv          # 直接创建，无需额外安装
+source .venv/bin/activate      # 激活
+```
+
+激活后：
 ```bash
 cd backend && pip install -r requirements.txt --prefer-binary
 cd ../frontend && npm install
 cd ../cli && pip install -e . --prefer-binary  # CLI 可选
+
+# 用完退出虚拟环境
+deactivate
 ```
 
 #### 常见问题
@@ -342,6 +367,14 @@ agent-me logs -n 50        # 查看后端日志
 - 不上传任何数据到第三方服务器
 
 ## 更新日志
+
+### v2.2 (2025-06-15)
+
+- **工具系统重构**：BaseTool + ToolRegistry 注册表模式，加工具只需注册一个类
+- **安全熔断**：连续 3 次工具失败自动暂停，防止 Token 浪费
+- **两级模型选择器**：先选厂商再选模型
+- **厂商 API Prefix 修复**：所有非 OpenAI 厂商的 api_prefix 修正，修复 Kimi/GLM/豆包 等无法调用的问题
+- **前端静态托管**：`npm run build` 后单个进程即可部署
 
 ### v2.1 (2025-06-13)
 

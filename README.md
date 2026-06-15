@@ -47,10 +47,17 @@ Settings → LLM Config → pick provider → enter API Key → save → enable
 powershell -ExecutionPolicy Bypass -File script\stop.ps1
 ```
 
-> PowerShell alternative (if `.bat` fails):
+> **Parameters**: `--mirror` — use China mirrors for pip/npm (slow downloads) | `--full` — full version (+file analysis) | `--venv` — use Python virtual environment (recommended for first-time setup)
+
+> **What is a virtual environment?**
+> It isolates project dependencies from your system Python. After activation, your terminal shows `(venv)` and all `pip install` packages go inside this environment.
+
+> **Why both .bat and .ps1?** Windows by default blocks `.ps1` scripts (PowerShell execution policy). `.bat` files run directly in CMD without restriction. Functionally identical — pick whichever works.
+
+> PowerShell alternative:
 > ```powershell
 > Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
-> .\script\install.ps1
+> .\script\install.ps1 -UseMirror
 > .\script\start.ps1
 > .\script\stop.ps1
 > ```
@@ -64,8 +71,25 @@ script/start.sh
 script/stop.sh
 ```
 
-### Manual Setup
+### Manual Setup (with venv — recommended)
 
+Virtual environment isolates dependencies from your system Python. When activated, your terminal prompt shows `(.venv)`.
+
+**Ubuntu / Debian / Linux Mint** (extra package required):
+```bash
+sudo apt update
+sudo apt install python3-venv
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+**CentOS / RHEL / Rocky Linux / Fedora / Arch** (venv built-in):
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+Then:
 ```bash
 # Backend
 cd backend
@@ -80,7 +104,13 @@ npm run dev
 # CLI (optional)
 cd cli
 pip install -e .
+
+# When done, exit venv
+deactivate
 ```
+
+> **Other shells**: Fish → `source .venv/bin/activate.fish`, Csh → `source .venv/bin/activate.csh`
+> **Verify isolation**: after activation, `which python` should show `.venv/bin/python`
 
 ### Configure & Use
 
@@ -221,6 +251,32 @@ Inside `agent-me chat`:
 | `/help` | Show help |
 | `/quit` | Exit |
 
+## Smart Memory v2.0
+
+### 3-Layer Architecture
+
+| Layer | Storage | Capacity | Mechanism | Edition |
+|-------|---------|----------|-----------|---------|
+| **Short-term** | In-memory deque | 50 rounds/session | Cleared on session end | Lite / Full |
+| **Long-term** | ChromaDB vector / SQLite | Unlimited | Importance scoring + time decay | Full=vector; Lite=keyword |
+| **User Profile** | JSON file | Persistent | Auto fact extraction | Lite / Full |
+
+### Auto Fact Extraction
+
+Every 10 rounds, agent-me calls the LLM to extract structured facts:
+
+```json
+[{"fact": "User prefers Python", "category": "skill", "importance": 8}]
+```
+
+### Importance Scoring
+
+Each memory scored 1-10 before storage: ≥5 → long-term, ≥7 → also profile, <5 → discarded.
+
+### Time Decay
+
+Retrieval score = relevance × importance × decay, 30-day half-life.
+
 ## Privacy
 
 - API Keys encrypted with Fernet at `backend/storage/config.enc`
@@ -229,13 +285,18 @@ Inside `agent-me chat`:
 
 ## Changelog
 
+### v2.2 (2025-06-15)
+
+- **Tool system refactor**: BaseTool + ToolRegistry pattern, adding a tool is a single `register()` call
+- **Safety fuse**: auto-stop after 3 consecutive tool failures, preventing wasted tokens
+- **Two-level model selector**: pick provider first, then model
+- **Provider api_prefix fix**: fixed all non-OpenAI provider prefixes, resolves Kimi/GLM/Doubao connectivity
+- **Static frontend hosting**: single-process deployment with `npm run build`
+
 ### v2.1 (2025-06-13)
 
 - **Auto Agent**: automatic tool determination from message content
 - **Tool expansion**: 3 → 10 tools (weather, news, file ops, command execution, browser control, time)
-- **Tool system refactor**: BaseTool + ToolRegistry pattern
-- **Safety fuse**: auto-stop after 3 consecutive tool failures
-- **Static frontend hosting**: single-process deployment with `npm run build`
 - **Smart Memory v2.0**: fact extraction, summaries, scoring, time decay
 - **Structured profile**: name + preferences + skills + habits + facts
 - **Security**: CORS, error sanitization, command evaluation, magic number validation
