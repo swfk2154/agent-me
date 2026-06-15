@@ -30,7 +30,7 @@ echo [OK] Node.js %nodever%
 echo.
 
 REM ---------- 2. Kill old processes ----------
-set PID_FILE=%~dp0running_pids.txt
+set PID_FILE=%~dp0..\running_pids.txt
 if exist "%PID_FILE%" (
     echo 清理旧进程...
     for /f "usebackq tokens=1" %%i in ("%PID_FILE%") do (
@@ -47,7 +47,7 @@ for %%p in (8000 3000) do (
 timeout /t 1 /nobreak >nul
 
 REM ---------- 3. Check dependencies ----------
-if not exist "%~dp0frontend\node_modules" (
+if not exist "%~dp0..\frontend\node_modules" (
     echo [错误] 前端依赖未安装，请先运行 install.bat
     echo   或手动: cd frontend ^&^& npm install
     pause
@@ -61,8 +61,8 @@ echo 启动后端...
 
 REM 使用 pythonw.exe 启动，无窗口、不占任务栏
 REM 运行日志输出到文件，不阻塞任何窗口
-set BE_LOG=%~dp0backend\storage\logs\backend.log
-if not exist "%~dp0backend\storage\logs" mkdir "%~dp0backend\storage\logs"
+set BE_LOG=%~dp0..\backend\storage\logs\backend.log
+if not exist "%~dp0..\backend\storage\logs" mkdir "%~dp0..\backend\storage\logs"
 
 start "" /B "C:/Program Files/Python310/pythonw.exe" -m uvicorn main:app --port 8000 --host 127.0.0.1 > "%BE_LOG%" 2>&1
 
@@ -82,16 +82,17 @@ if %ready% equ 1 ( echo [OK] 后端就绪 ) else ( echo [警告] 后端可能未
 
 REM ---------- 5. Start frontend ----------
 echo 启动前端...
-set FE_LOG=%~dp0backend\storage\logs\frontend.log
+set FE_LOG=%~dp0..\backend\storage\logs\frontend.log
 
 REM 前端：用 start "" /MIN 极小化窗口，肉眼几乎看不到
-start "agent-me" /MIN cmd /c "cd /d "%~dp0frontend" && npm run dev > "%FE_LOG%" 2>&1"
+start "agent-me" /MIN cmd /c "cd /d "%~dp0..\frontend" && npm run dev > "%FE_LOG%" 2>&1"
 
 REM ---------- 6. Save PIDs ----------
 REM 按端口号保存真实的进程 PID（不是 CMD 窗口 PID）
 for /f "tokens=5" %%i in ('netstat -ano ^| findstr ":8000 "') do set BACKEND_PID=%%i
 for /f "tokens=5" %%i in ('netstat -ano ^| findstr ":3000 "') do set FRONTEND_PID=%%i
 
+set PID_FILE=%~dp0..\running_pids.txt
 if defined BACKEND_PID echo %BACKEND_PID% > "%PID_FILE%"
 if defined FRONTEND_PID echo %FRONTEND_PID% >> "%PID_FILE%"
 

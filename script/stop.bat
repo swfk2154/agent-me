@@ -9,7 +9,7 @@ echo ==================================
 echo.
 
 REM ---------- 1. Kill by PID file ----------
-set PID_FILE=%~dp0running_pids.txt
+set PID_FILE=%~dp0..\running_pids.txt
 set killed=0
 if exist "%PID_FILE%" (
     echo 通过 PID 文件停止...

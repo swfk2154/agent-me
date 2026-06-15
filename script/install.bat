@@ -67,7 +67,7 @@ if %USE_VENV% equ 1 (
     if not exist ".venv" (
         python -m venv .venv
     )
-    set PYTHON_CMD=%~dp0.venv\Scripts\python
+    set PYTHON_CMD=%~dp0..\.venv\Scripts\python
     echo   虚拟环境已激活
 ) else (
     echo [2/5] 跳过虚拟环境（全局安装）
@@ -106,7 +106,7 @@ if %FULL_INSTALL% equ 1 (
 )
 
 REM 进入 backend 目录
-pushd "%~dp0backend"
+pushd "%~dp0..\backend"
 
 echo   升级 pip/setuptools/wheel...
 %PYTHON_CMD% -m pip install --upgrade pip setuptools wheel --quiet 2>nul
@@ -127,7 +127,7 @@ echo.
 REM ==================== 5. 安装前端 ====================
 echo [5/5] 安装前端依赖...
 
-pushd "%~dp0frontend"
+pushd "%~dp0..\frontend"
 call npm install
 if %errorlevel% neq 0 (
     popd
@@ -142,7 +142,7 @@ echo.
 
 REM ==================== 6. 安装 CLI ====================
 echo [6/6] 安装 CLI 工具...
-pushd "%~dp0cli"
+pushd "%~dp0..\cli"
 %PYTHON_CMD% -m pip install -e . --prefer-binary >nul 2>&1
 if %errorlevel% equ 0 (
     echo   CLI 安装完成（执行 agent-me --help 测试）
