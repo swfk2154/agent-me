@@ -1,5 +1,5 @@
 """命令执行 + 三级安全审批"""
-import json, subprocess, shlex, re, datetime as dt
+import json, subprocess, shlex, re, os, datetime as dt
 from pathlib import Path
 from app_config.settings import STORAGE_DIR
 
@@ -123,8 +123,13 @@ class CommandService:
         if len(segments) > 1:
             return {"success": False, "output": "", "error": "不允许包含多段命令操作符 (; || && |)", "evaluation": evaluation}
         try:
+            # 跨平台兼容：Windows → PowerShell，macOS/Linux → /bin/sh
+            if os.name == "nt":
+                shell_cmd = ["powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "RemoteSigned", "-Command", cmd]
+            else:
+                shell_cmd = ["/bin/sh", "-c", cmd]
             result = subprocess.run(
-                ["powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "RemoteSigned", "-Command", cmd],
+                shell_cmd,
                 capture_output=True, text=True, timeout=timeout, cwd=str(workdir), encoding="utf-8", errors="replace")
             self._log(cmd, result.returncode == 0, str(workdir))
             return {"success": result.returncode == 0, "output": result.stdout[-5000:],

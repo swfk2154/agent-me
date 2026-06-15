@@ -60,16 +60,35 @@ async def health():
 
 @app.get("/api/logs")
 async def view_logs(type: str = "all", lines: int = 100):
-    # 限制读取行数，防止过大请求
     lines = min(max(lines, 1), 5000)
     path = LOG_DIR / ("errors.log" if type == "errors" else "agent-me.log")
     if not path.exists():
         return {"logs": [], "message": "暂无日志"}
-    # 对大文件使用增量读取，避免内存问题
-    content = path.read_text(encoding="utf-8")
-    all_lines = content.strip().split("\n")
-    log_lines = all_lines[-lines:]
-    return {"logs": log_lines, "file": path.name, "total_lines": len(all_lines)}
+    log_lines = _tail(path, lines)
+    return {"logs": log_lines, "file": path.name, "total_lines": "?"}
+
+
+def _tail(path: Path, n: int) -> list[str]:
+    """从文件尾部读取最后 n 行，避免大文件全量读入内存"""
+    chunk_size = 1024
+    with open(path, "rb") as f:
+        f.seek(0, 2)
+        total_bytes = f.tell()
+        data = []
+        pos = total_bytes
+        while len(data) < n and pos > 0:
+            read_size = min(chunk_size, pos)
+            pos -= read_size
+            f.seek(pos)
+            buf = f.read(read_size)
+            data = buf.split(b"\n") + data
+        lines = []
+        for b_line in data[-n:]:
+            try:
+                lines.append(b_line.decode("utf-8", errors="replace"))
+            except Exception:
+                lines.append("")
+        return lines
 
 
 logger.info("所有路由加载完成")

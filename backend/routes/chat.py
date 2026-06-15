@@ -1,6 +1,5 @@
 """对话 API：SQLite持久化 + SSE流 + 文件RAG + 流取消 + 自动Agent判断"""
 import json, asyncio, traceback
-import re
 from datetime import datetime
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import StreamingResponse
@@ -134,12 +133,6 @@ async def send_message(req: SendMessageRequest):
 
     model_str, provider_key = _resolve_model(req.model or conv.get("model", ""))
 
-    # 判断是否为多模态模型
-    is_vision_model = any(kw in model_str.lower() for kw in ["vision", "gpt-4o", "gpt-4.1", "gemini-2", "gemini-1.5", "claude", "opus", "sonnet", "haiku", "glm-4v", "doubao-vision", "vl"])
-    if is_vision_model:
-        # 多模态模型自动支持图片
-        pass
-
     log.info(f"Chat: model={model_str} provider={provider_key} msg={req.content[:50]}")
 
     # 长期记忆（轻量读取）
@@ -203,6 +196,7 @@ async def send_message(req: SendMessageRequest):
                     messages=history, model=model_str, provider_key=provider_key,
                     profile=profile, max_iterations=8,
                     cancel_event=cancel_event, model_params=model_params,
+                    custom_prompt=req.system_prompt or conv.get("system_prompt", ""),
                 ):
                     full += token
                     yield f"data: {json.dumps({'token': token})}\n\n"

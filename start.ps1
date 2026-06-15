@@ -104,7 +104,19 @@ foreach ($port in @(8000, 3000)) {
     }
 }
 
-# ---------- 3. Start backend ----------
+# ---------- 3. Check dependencies ----------
+
+$frontendModules = "$root\frontend\node_modules"
+if (-not (Test-Path $frontendModules)) {
+    Write-E "前端依赖未安装，请先运行 install.ps1"
+    Write-I "或手动: cd frontend && npm install"
+    Read-Host "`nPress Enter to close"
+    exit 1
+}
+Write-O "Dependencies OK"
+Write-Host ""
+
+# ---------- 4. Start backend ----------
 
 Write-Host ""; Write-Host "Starting backend..." -ForegroundColor Cyan
 

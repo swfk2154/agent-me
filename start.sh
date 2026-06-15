@@ -23,6 +23,15 @@ if [ -n "$(check_port 3000)" ]; then
     exit 1
 fi
 
+# Check if frontend dependencies are installed
+if [ ! -d "$SCRIPT_DIR/frontend/node_modules" ]; then
+    echo "[ERROR] Frontend dependencies not installed."
+    echo "   Run: cd frontend && npm install"
+    exit 1
+fi
+echo "  Dependencies OK"
+echo ""
+
 # Start backend
 cd backend
 nohup python3 -m uvicorn main:app --port 8000 > ../backend/storage/logs/backend.log 2>&1 &
