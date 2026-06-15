@@ -108,7 +108,20 @@ export default function MessageBubble({ message }) {
         )}
 
         {isUser ? (
-          <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
+          <div className="text-sm whitespace-pre-wrap leading-relaxed">
+            {message.images && message.images.length > 0 && (
+              <div className="flex gap-2 mb-2 flex-wrap">
+                {message.images.map((img, i) => (
+                  <img key={i}
+                    src={`data:image/${img.format || "png"};base64,${img.data}`}
+                    alt={img.name || `图片${i+1}`}
+                    className="max-w-[200px] max-h-[200px] rounded-lg border border-white/20"
+                  />
+                ))}
+              </div>
+            )}
+            <p>{message.content}</p>
+          </div>
         ) : (
           <div className="markdown-body text-sm">
             {parts.length > 0 ? (

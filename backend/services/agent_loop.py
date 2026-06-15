@@ -27,6 +27,7 @@ async def agent_loop_stream(
     cancel_event: asyncio.Event = None,
     model_params: dict = None,
     custom_prompt: str = "",
+    file_context: str = "",
 ) -> AsyncGenerator[str, None]:
     """Agent 循环：ToolRegistry 驱动，安全熔断保护。"""
     if profile is None:
@@ -69,7 +70,7 @@ async def agent_loop_stream(
             if memories:
                 mem_context = "\n".join(memories)
 
-        system = _build_system_prompt(mem_context, profile, "", "", custom_prompt)
+        system = _build_system_prompt(mem_context, profile, "", file_context, custom_prompt)
         full_msgs = [{"role": "system", "content": system}] + conversation
 
         try:

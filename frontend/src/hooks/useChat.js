@@ -66,7 +66,7 @@ export function useChat() {
       }
     }
 
-    store.addMessage(convId, { role: "user", content: imageData.length ? `[图片] ${content}` : content, timestamp: new Date().toISOString() });
+    store.addMessage(convId, { role: "user", content: imageData.length ? `[图片] ${content}` : content, images: imageData, timestamp: new Date().toISOString() });
     store.addMessage(convId, { role: "assistant", content: "", timestamp: new Date().toISOString() });
     store.setStreaming(true);
 

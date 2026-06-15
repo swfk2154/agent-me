@@ -166,10 +166,11 @@ async def send_message(req: SendMessageRequest):
     if req.image_data:
         # 图片消息：content 为 vision 数组格式
         content_parts = [{"type": "text", "text": req.content or "请描述这张图片"}]
-        for img_b64 in req.image_data:
+        for img in req.image_data:
+            fmt = img.format or "png"
             content_parts.append({
                 "type": "image_url",
-                "image_url": {"url": f"data:image/{img_b64.get('format','png')};base64,{img_b64.get('data','')}"}
+                "image_url": {"url": f"data:image/{fmt};base64,{img.data}"}
             })
         vision_msg = {"role": "user", "content": content_parts}
         history = history + [vision_msg]
@@ -202,6 +203,7 @@ async def send_message(req: SendMessageRequest):
                     profile=profile, max_iterations=8,
                     cancel_event=cancel_event, model_params=model_params,
                     custom_prompt=req.system_prompt or conv.get("system_prompt", ""),
+                    file_context=file_context,
                 ):
                     full += token
                     yield f"data: {json.dumps({'token': token})}\n\n"
@@ -209,7 +211,7 @@ async def send_message(req: SendMessageRequest):
                 # 普通模式
                 async for token in chat_stream(
                     messages=history, model=model_str, provider_key=provider_key,
-                    long_term_context=file_context, profile=profile, search_context="",
+                    long_term_context=file_context, profile=profile, search_context=skill_prompt if req.search_enabled else "",
                     skill_prompt=skill_prompt, custom_prompt=req.system_prompt or conv.get("system_prompt", ""),
                     model_params=model_params, cancel_event=cancel_event,
                 ):
