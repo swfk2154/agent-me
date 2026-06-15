@@ -163,26 +163,51 @@ def _search_custom(query: str, base_url: str, api_key: str = "", max_results: in
 
 
 def search_web(query: str, max_results: int = 5) -> list[dict]:
+    """搜索互联网，失败时自动重试最多 2 次"""
     provider, cfg = _get_active_provider()
     api_key = cfg.get("api_key", "")
     base_url = cfg.get("base_url", "")
 
+    # 选择搜索函数
     if provider == "tavily" and api_key:
-        return _search_tavily(query, api_key, max_results)
+        search_fn = lambda: _search_tavily(query, api_key, max_results)
     elif provider == "brave" and api_key:
-        return _search_brave(query, api_key, max_results)
+        search_fn = lambda: _search_brave(query, api_key, max_results)
     elif provider == "bing" and api_key:
-        return _search_bing(query, api_key, max_results)
+        search_fn = lambda: _search_bing(query, api_key, max_results)
     elif provider == "serpapi" and api_key:
-        return _search_serpapi(query, api_key, max_results)
+        search_fn = lambda: _search_serpapi(query, api_key, max_results)
     elif provider == "serper" and api_key:
-        return _search_serper(query, api_key, max_results)
+        search_fn = lambda: _search_serper(query, api_key, max_results)
     elif provider == "searxng":
-        return _search_searxng(query, base_url, api_key, max_results)
+        search_fn = lambda: _search_searxng(query, base_url, api_key, max_results)
     elif provider == "custom" and base_url:
-        return _search_custom(query, base_url, api_key, max_results)
+        search_fn = lambda: _search_custom(query, base_url, api_key, max_results)
     else:
-        return _search_ddg(query, max_results)
+        search_fn = lambda: _search_ddg(query, max_results)
+
+    # 执行搜索，失败重试
+    import time
+    max_attempts = 3
+    for attempt in range(1, max_attempts + 1):
+        try:
+            results = search_fn()
+            if results and "失败" not in results[0].get("title", ""):
+                return results
+            # 第一次失败：等 1 秒重试；第二次失败：等 2 秒重试后换备用
+            if attempt < max_attempts:
+                time.sleep(attempt)
+        except Exception:
+            if attempt < max_attempts:
+                time.sleep(attempt)
+
+    # 全部失败，启用 DuckDuckGo HTML 模式作为备用
+    try:
+        return _search_ddg_html(query, max_results)
+    except Exception:
+        pass
+
+    return []
 
 
 def format_search_context(query: str, max_results: int = 5) -> str:

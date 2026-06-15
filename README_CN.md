@@ -4,6 +4,11 @@
 
 ## 快速开始
 
+### 前置条件
+
+- Python ≥ 3.10
+- Node.js ≥ 18
+
 ### 1. 克隆仓库
 
 ```bash
@@ -11,111 +16,82 @@ git clone https://github.com/swfk2154/agent-me.git
 cd agent-me
 ```
 
-### 2. 安装依赖
+### 2. 安装与启动
 
-**前置条件**：Python ≥ 3.10、Node.js ≥ 18、Git（[下载 Python](https://www.python.org/downloads/) | [下载 Node.js](https://nodejs.org/)）
+项目提供三套脚本，按顺序使用即可完成安装、启动、停止。
 
-#### ⚡ 第 0 步：换国内镜像源（强烈推荐，只需一次）
+| 脚本 | 何时用 | 做什么 |
+|------|--------|--------|
+| `install.bat` | **仅首次**装依赖 | 检测环境 → 装 Python 包 → 装 npm 包 → 装 CLI |
+| `start.bat` | **每次用都启动** | 启动后端 (8000) + 前端 (3000)，关窗口不影响服务 |
+| `stop.bat` | **用完关闭** | 停止所有服务进程 |
 
-> 不换源 = 完整版约 400MB 从外网下载，可能耗时 10 分钟以上。换源后通常 3~5 分钟完成。
-
-```bash
-# pip 换清华源（永久生效）
-pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
-pip config set global.trusted-host pypi.tuna.tsinghua.edu.cn
-
-# npm 换淘宝源（永久生效）
-npm config set registry https://registry.npmmirror.com
-```
-
----
-
-#### 选择版本
-
-| 版本 | 安装大小 | 功能差异 |
-|------|---------|---------|
-| **轻量版（推荐新手）** | ~50MB | 多轮对话、联网搜索、命令执行、任务管理、写作助手、CLI、用户画像 |
-| **完整版** | ~400MB | 轻量版全部 + **向量语义检索长期记忆** + **文件上传分析（PDF/DOCX/TXT）** |
-
-> 首次安装建议先用轻量版。如需文件分析或语义记忆搜索，再升级完整版：`pip install -r requirements-full.txt`
-
-#### 安装步骤
-
-**Windows — 一键安装**
-
-> 注意：安装前确保已安装 Python 3.10+ 和 Node.js 18+
+#### Windows 完整流程
 
 ```cmd
-install.bat                  # 轻量版（推荐，~50MB）
-install.bat --full           # 完整版（含向量记忆+文件分析，~400MB）
-install.bat --mirror         # 国内镜像加速（强烈建议中国用户使用）
-install.bat --full --mirror  # 完整版+镜像
+:: 第 1 步：安装依赖（仅首次）
+install.bat                  → 轻量版（~50MB，推荐新手）
+install.bat --full           → 完整版（+向量记忆+文件分析）
+install.bat --mirror         → 国内镜像加速（下载慢时强烈推荐）
+
+:: 第 2 步：启动服务
+start.bat                    → 后台启动后端+前端
+                             → 看到"已在后台启动"即成功
+                             → 关掉窗口不影响服务
+
+:: 第 3 步：打开浏览器
+访问 http://localhost:3000
+
+:: 第 4 步：配置 API Key
+左侧"设置" → "LLM 配置" → 选提供商 → 输入 Key → 保存 → 测试 → 启用
+
+:: 第 5 步：开始对话
+回到"对话"标签 → 选好模型 → 输入消息
+
+:: 第 6 步：用完关闭
+stop.bat                     → 停止所有服务
 ```
 
-> 如果使用 PowerShell：`.\install.ps1 [-FullInstall] [-UseMirror] [-UseVenv]`
+> **参数说明**：`--mirror` 国内镜像加速（下载 pip/npm 包变快）、`--full` 完整版（文件分析）、`--venv` 虚拟环境。
 
-**macOS / Linux — 一键安装**
+> **为什么有 bat 和 ps1 两套？** Windows 默认禁止运行 `.ps1` 脚本（PowerShell 执行策略限制），`.bat` 双击就能运行不受策略限制。功能完全一样，选一套用即可。
+>
+> **PowerShell 版**（如 bat 报错时备用）：
+> ```powershell
+> # 先执行一次放行当前窗口：Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
+> .\install.ps1 -UseMirror
+> .\start.ps1
+> .\stop.ps1
+> ```
+
+#### macOS / Linux
 
 ```bash
-chmod +x install.sh && ./install.sh          # 轻量版
-chmod +x install.sh && ./install.sh --full   # 完整版
+chmod +x install.sh start.sh stop.sh
+./install.sh        # 装依赖
+./start.sh          # 启动
+./stop.sh           # 停止
 ```
 
-**手动安装（两个终端窗口）**
+#### 手动安装（各平台通用）
 
 ```bash
-# 终端 1 — 后端
-cd backend
-pip install -r requirements.txt --prefer-binary
-
-# 终端 2 — 前端
-cd ../frontend
-npm install
-
-# CLI（可选）
-cd ../cli
-pip install -e . --prefer-binary
+cd backend && pip install -r requirements.txt --prefer-binary
+cd ../frontend && npm install
+cd ../cli && pip install -e . --prefer-binary  # CLI 可选
 ```
 
----
-
-#### 使用虚拟环境（推荐，避免污染全局 Python）
-
-```bash
-# 创建虚拟环境（在项目根目录执行）
-python -m venv .venv
-
-# Windows 激活
-.venv\Scripts\activate
-
-# macOS / Linux 激活
-source .venv/bin/activate
-
-# 激活后，再执行上面的第 2~4 步安装依赖
-```
-
-#### 常见安装问题
+#### 常见问题
 
 | 问题 | 原因 | 解决 |
 |------|------|------|
-| `pip install` 卡住/超时 | **完整版**从外网下载（约 400MB） | 换国内镜像源；或改用**轻量版** |
-| `npm install` 报错 "禁止运行脚本" | PowerShell 执行策略限制 | 改用 CMD 运行 `npm install` |
-| `Building wheel for ...` 卡住 | 从源码编译 C 扩展 | 加 `--prefer-binary` 参数 |
-| `No module named '_ctypes'` | Python 编译时缺少 libffi | 重装 Python（官网安装包） |
-| 安装完成后启动报错 | 依赖版本不兼容 | 确认 Python ≥ 3.10，Node.js ≥ 18 |
-| 文件上传后无法解析 | 未安装完整版 | `pip install -r requirements-full.txt` |
+| `pip install` 卡住/超时 | 从外网下载包慢 | 加 `--mirror` 参数 |
+| `npm install` 报错"禁止运行脚本" | PowerShell 策略 | 改用 `install.bat`（CMD） |
+| 启动后浏览器白屏 | 前端依赖没装 | 检查 `frontend\node_modules` 是否存在 |
+| 启动后 LLM 配置页面不显示 | 后端没启动 | 检查 `stop.bat` → 重新 `start.bat` |
+| 文件上传无法解析 | 需要完整版 | `pip install -r requirements-full.txt` |
 
 ### 3. 启动服务
-
-**Windows — 一键启动**
-
-```cmd
-start.bat       # 启动后端 + 前端（~3s 就绪）
-stop.bat        # 关闭服务
-```
-
-> 如果 PowerShell 执行策略允许，也可使用 `.\start.ps1` / `.\stop.ps1`。
-> start.bat 运行后窗口保持打开，可手动关闭（服务不会停止）。停服务请用 stop.bat。
 
 **macOS / Linux — 一键启动（推荐）**
 

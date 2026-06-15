@@ -280,10 +280,10 @@ async def _tool_web_search(args: dict) -> str:
     try:
         results = await asyncio.wait_for(
             asyncio.to_thread(search_web, query, max_results=5),
-            timeout=15
+            timeout=25
         )
     except asyncio.TimeoutError:
-        return "搜索超时 (15s)"
+        return "搜索超时 (25s)，请检查网络连接后重试"
     if not results:
         return "未找到相关搜索结果。"
     lines = []

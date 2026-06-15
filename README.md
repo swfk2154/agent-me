@@ -1,4 +1,4 @@
-# agent-me v2.1 — Universal Personal AI Agent
+# agent-me v2.2 — Universal Personal AI Agent
 
 A full-stack AI assistant with multi-LLM support, smart memory, file analysis, automated tool calling, Web/CLI dual interface. All data stored locally.
 
@@ -19,70 +19,65 @@ git clone https://github.com/swfk2154/agent-me.git
 cd agent-me
 ```
 
-### 2. Install Dependencies
+### 2. Install & Start (Windows)
 
-Choose your edition and install method:
+Three scripts provided. Choose based on your environment:
 
-| Edition | Size | Features |
-|---------|------|----------|
-| **Lite** | ~50MB | Multi-turn chat, web search, command execution, task management, writing assistant, CLI, user profile |
-| **Full** | ~400MB | Lite + **vector semantic memory (long-term)** + **file upload analysis (PDF/DOCX/TXT)** |
+| Step | Script | When to use |
+|------|--------|-------------|
+| **Install** | `install.bat` | First time setup. Installs all Python + Node.js dependencies |
+| **Start** | `start.bat` | Every time you want to run agent-me. Launches backend + frontend |
+| **Stop** | `stop.bat` | Stops backend + frontend processes |
 
-> Start with Lite. Upgrade later with `pip install -r requirements-full.txt`.
+> If you get PowerShell execution policy errors, use `.bat` files (CMD) instead of `.ps1`.
+> If `.bat` doesn't work either, run `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process` once per CMD window, then use PowerShell scripts.
 
-**Windows — One-click install:**
-
-```cmd
-install.bat           # Lite edition
-install.bat --full    # Full edition (+file analysis, ~400MB)
-install.bat --mirror  # With China mirror (recommended for CN users)
-```
-
-> If you prefer PowerShell: `.\install.ps1 [-FullInstall] [-UseMirror] [-UseVenv]`
-
-**macOS / Linux — One-click install:**
-
-```bash
-chmod +x install.sh && ./install.sh          # Lite
-chmod +x install.sh && ./install.sh --full   # Full
-```
-
-**Manual install (two terminals):**
-
-```bash
-# Backend
-cd backend
-pip install -r requirements.txt --prefer-binary
-
-# Frontend
-cd ../frontend
-npm install
-
-# CLI (optional)
-cd ../cli
-pip install -e . --prefer-binary
-```
-
-### 3. Start
-
-**Windows**
+**Step-by-step:**
 
 ```cmd
-start.bat       # Start backend + frontend (~3s)
-stop.bat        # Stop services
+:: 1. Install dependencies (one time only)
+install.bat              → Light version (~50MB, recommended for first time)
+install.bat --full       → Full version (+file analysis, ~400MB)
+install.bat --mirror     → Use China mirrors if downloads are slow
+install.bat --full --mirror → Full version with China mirrors
+
+:: 2. Start services (every time you use it)
+start.bat                → Launches backend (port 8000) + frontend (port 3000)
+                         → This window will show progress and stay open
+                         → Close the window safely — services keep running
+
+:: 3. Open browser
+Open http://localhost:3000 in your browser
+
+:: 4. Configure
+Click "Settings" → "LLM Config" → pick a provider → enter API Key → save → enable
+
+:: 5. Stop (when done)
+stop.bat                 → Kills backend + frontend processes
 ```
 
-> If PowerShell execution policy allows, you can also use `.\start.ps1` / `.\stop.ps1`.
+**PowerShell version (if execution policy allows):**
 
-**macOS / Linux**
+```powershell
+.\install.ps1                              # Light version
+.\install.ps1 -FullInstall -UseMirror      # Full with China mirrors
+.\start.ps1                                # Start services
+.\stop.ps1                                 # Stop services
+```
+
+### macOS / Linux
 
 ```bash
-chmod +x start.sh stop.sh
-./start.sh      # Start
-./stop.sh       # Stop
+chmod +x install.sh start.sh stop.sh
+
+./install.sh            # Install dependencies (Lite)
+./install.sh --full     # Install dependencies (Full)
+
+./start.sh              # Start services
+./stop.sh               # Stop services
 ```
 
-**Manual (two terminals)**
+### Manual (two terminals)
 
 ```bash
 # Terminal 1 — Backend
@@ -92,9 +87,13 @@ python3 -m uvicorn main:app --port 8000
 # Terminal 2 — Frontend
 cd frontend
 npm run dev
+
+# CLI (optional)
+cd cli
+pip install -e . --prefer-binary
 ```
 
-### 4. Configure & Use
+### 3. Configure & Use
 
 1. Open `http://localhost:3000`
 2. Go to **Settings** → **LLM Config**
@@ -114,7 +113,7 @@ npm run dev
 |---------|-------------|
 | **Multi-turn Chat** | SSE streaming + Markdown rendering + code highlighting, Ctrl+C to cancel |
 | **Auto Agent Mode** | Automatically decides whether to call tools based on message content |
-| **8 Built-in Tools** | Web search, file read, directory list, command execution, memory search, file search, browser control, current time |
+| **10 Built-in Tools** | Web search, weather, news, file read, directory list, command execution, memory search, file search, browser control, current time |
 | **18 Skill Modes** | Architecture planning, product mindset, ship-first, minimal deps, OOP, functional, Claude Code style, Cursor style, pair programming, caveman, diagnose, grill, prototype, TDD, architecture review, triage, zoom-out, security |
 | **9 LLM Providers** | OpenAI / Anthropic / Google / DeepSeek / Kimi / MiniMax / GLM (Zhipu) / Doubao (ByteDance) / Custom |
 | **Smart Memory v2.0** | Short-term (50 rounds/session) + long-term (vector/SQLite) + structured user profile (auto fact extraction) |
@@ -146,6 +145,8 @@ No manual switching needed. agent-me detects your intent automatically:
 
 | Category | Examples |
 |----------|----------|
+| Weather | weather, temperature, rain, snow, typhoon |
+| News | news, headline, tech, military, sports, entertainment |
 | Search | search, find, google, look up, query |
 | File | read file, open file, view file, cat, list directory, ls, dir |
 | Command | run, execute, git status, git diff, npm, pip, python |
@@ -153,12 +154,14 @@ No manual switching needed. agent-me detects your intent automatically:
 | Memory | search memory, recall, what did we say about, long-term memory |
 | General | check, find, look for |
 
-### 8 Built-in Tools
+### 10 Built-in Tools
 
 | Tool | Function | Restrictions |
 |------|----------|-------------|
 | `get_current_time` | Get current date/time | None |
-| `web_search` | Web search (15s timeout) | None |
+| `get_weather` | Query weather by city name | Free, no API key needed (wttr.in) |
+| `get_news` | Get latest news by keyword | Free NewsAPI key or auto-fallback to web_search |
+| `web_search` | Web search (15s timeout, auto-retry) | None |
 | `read_file` | Read local files | Max 100KB, supports pagination |
 | `list_directory` | List directory contents | Max recursion depth 3 |
 | `run_command` | Execute shell commands | Only always-allow level commands |
