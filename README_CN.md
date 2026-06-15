@@ -23,8 +23,8 @@ cd agent-me
 | 脚本 | 用于 | 说明 |
 |------|------|------|
 | `script\install.bat` | **仅首次** 装依赖 | 检测环境 → 装 Python 包 → 装 npm 包 → 装 CLI |
-| `script\start.bat` | **每次使用前** 启动 | 后台启动后端 (8000) + 前端 (3000)，关窗口不影响服务 |
-| `script\stop.bat` | **用完** 关闭 | 停止所有服务进程 |
+| `script\start.ps1` | **每次使用前** 启动 | 后台启动后端 (8000) + 前端 (3000)，在 PowerShell 运行 |
+| `script\stop.ps1` | **用完** 关闭 | 停止所有服务进程 |
 
 #### Windows 完整流程
 
@@ -34,9 +34,8 @@ script\install.bat                    → 轻量版（~50MB，推荐）
 script\install.bat --full             → 完整版（+向量记忆+文件分析）
 script\install.bat --mirror           → 国内镜像加速（下载慢时强烈推荐）
 
-:: 2. 启动服务
-script\start.bat                      → 后台启动后端+前端
-                                      → 后端无窗口静默运行，首次约 15-20 秒就绪
+:: 2. 启动服务（在 PowerShell 中运行）
+powershell -ExecutionPolicy Bypass -File script\start.ps1
 
 :: 3. 打开浏览器
 访问 http://localhost:3000
@@ -47,8 +46,8 @@ script\start.bat                      → 后台启动后端+前端
 :: 5. 开始对话
 回到"对话"标签 → 选好模型 → 输入消息
 
-:: 6. 用完关闭
-script\stop.bat                       → 停止所有服务
+:: 6. 用完关闭（在 PowerShell 中运行）
+powershell -ExecutionPolicy Bypass -File script\stop.ps1
 ```
 
 > **参数说明**：`--mirror` 国内镜像加速（下载 pip/npm 包变快）、`--full` 完整版（文件分析）、`--venv` 虚拟环境。
@@ -88,7 +87,7 @@ cd ../cli && pip install -e . --prefer-binary  # CLI 可选
 | `pip install` 卡住/超时 | 从外网下载包慢 | 加 `--mirror` 参数 |
 | `npm install` 报错"禁止运行脚本" | PowerShell 策略 | 改用 `install.bat`（CMD） |
 | 启动后浏览器白屏 | 前端依赖没装 | 检查 `frontend\node_modules` 是否存在 |
-| 启动后 LLM 配置页面不显示 | 后端没启动 | 运行 `script\stop.bat` → 重新 `script\start.bat` |
+| 启动后 LLM 配置页面不显示 | 后端没启动 | 运行 `script\stop.ps1` → 重新 `script\start.ps1` |
 | 文件上传无法解析 | 需要完整版 | `pip install -r requirements-full.txt` |
 
 ### 3. 启动服务
@@ -129,7 +128,7 @@ pkill -f "uvicorn"   # 关闭后端
 pkill -f "vite"      # 关闭前端
 ```
 
-Windows 用户请使用 `script\stop.bat` 关闭。如果无效，手动操作：
+Windows 用户请使用 `script\stop.ps1` 关闭。如果无效，手动操作：
 
 ```cmd
 netstat -ano | findstr :8000
@@ -259,8 +258,8 @@ agent-me 会自动判断是否调用工具：
 agent-me/
 ├── script/                    # 安装/启动/停止脚本
 │   ├── install.bat(.ps1)     # 装依赖（Windows）
-│   ├── start.bat(.ps1)       # 启动服务（Windows）
-│   ├── stop.bat(.ps1)        # 停止服务（Windows）
+│   ├── start.ps1              # 启动服务（Windows）
+│   ├── stop.ps1               # 停止服务（Windows）
 │   ├── install.sh            # 装依赖（macOS/Linux）
 │   ├── start.sh              # 启动服务（macOS/Linux）
 │   └── stop.sh               # 停止服务（macOS/Linux）
@@ -288,24 +287,49 @@ agent-me/
 ## CLI 命令参考
 
 ```bash
-# 核心命令
-agent-me chat                # 交互式聊天
-agent-me ask "问题"          # 一次性问答
+# === 核心命令 ===
+agent-me chat              # 交互式聊天（启动时选模型，支持斜杠命令）
+agent-me ask "问题"         # 一次性问答，-m 模型 -f 文件 -s 技能 --search
 
-# 配置
-agent-me config list         # 查看提供商配置
-agent-me config set <id>     # 配置 API Key
-agent-me config test <id>    # 测试连接
+# === 模型与配置 ===
+agent-me models            # 查看可用模型
+agent-me config list       # 查看提供商配置
+agent-me config set <id>   # 交互式配置 API Key（不显示明文）
+agent-me config test <id>  # 测试连接
 
-# 搜索与记忆
-agent-me search "查询"       # 联网搜索
-agent-me memory "关键词"     # 搜索长期记忆
+# === 对话管理 ===
+agent-me conversations     # 列出所有对话
+agent-me export [id]       # 导出对话（Markdown）
 
-# 其他
-agent-me tasks               # 任务列表
-agent-me status              # 后端状态
-agent-me logs -n 50          # 后端日志
+# === 搜索与记忆 ===
+agent-me search "查询"      # 联网搜索
+agent-me memory "关键词"    # 搜索长期记忆
+
+# === 其他 ===
+agent-me tasks             # 查看任务列表
+agent-me status            # 查看后端状态
+agent-me logs -n 50        # 查看后端日志
 ```
+
+### CLI 聊天斜杠命令
+
+在 `agent-me chat` 交互模式下输入：
+
+| 命令 | 功能 |
+|------|------|
+| `/new [标题]` | 新建对话 |
+| `/list` | 列出所有对话 |
+| `/switch <ID>` | 切换到指定对话 |
+| `/model [名称]` | 查看或切换模型 |
+| `/skill [名称]` | 查看或切换技能模式 |
+| `/search [查询]` | 临时联网搜索 |
+| `/file <路径>` | 上传文件到当前对话 |
+| `/clear` | 清空当前对话 |
+| `/history` | 显示对话历史 |
+| `/info` | 显示当前会话信息 |
+| `/export [ID]` | 导出为 Markdown |
+| `/help` | 显示帮助 |
+| `/quit` | 退出 |
 
 ## 隐私
 

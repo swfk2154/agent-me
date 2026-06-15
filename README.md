@@ -23,21 +23,19 @@ All scripts live in `script/`:
 | Step | Script | When to use |
 |------|--------|-------------|
 | **Install** | `script\install.bat` | First time — installs all Python + Node.js deps |
-| **Start** | `script\start.bat` | Every session — launches backend (port 8000) + frontend (port 3000) |
-| **Stop** | `script\stop.bat` | When done — stops all services |
+| **Start** | `script\start.ps1` | Every session — launches backend (port 8000) + frontend (port 3000) |
+| **Stop** | `script\stop.ps1` | When done — stops all services |
 
 **Step-by-step:**
 
-```cmd
+```powershell
 :: 1. Install (one time only)
 script\install.bat                    → Light version (~50MB)
 script\install.bat --full             → Full version (+file analysis, ~400MB)
 script\install.bat --mirror           → China mirrors for slow downloads
 
-:: 2. Start
-script\start.bat                      → Backend runs silently (no window)
-                                      → Frontend minimized window
-                                      → ~15-20s for first startup (ChromaDB)
+:: 2. Start (in PowerShell)
+powershell -ExecutionPolicy Bypass -File script\start.ps1
 
 :: 3. Open browser
 http://localhost:3000
@@ -45,8 +43,8 @@ http://localhost:3000
 :: 4. Configure
 Settings → LLM Config → pick provider → enter API Key → save → enable
 
-:: 5. Stop
-script\stop.bat                       → Clean shutdown
+:: 5. Stop (in PowerShell)
+powershell -ExecutionPolicy Bypass -File script\stop.ps1
 ```
 
 > PowerShell alternative (if `.bat` fails):
@@ -165,6 +163,53 @@ agent-me/
 ├── frontend/                  # React SPA
 └── cli/                       # CLI tool
 ```
+
+## CLI Reference
+
+```bash
+# === Core ===
+agent-me chat              # Interactive chat (model selection on start, slash commands)
+agent-me ask "question"    # One-shot question, -m model -f file -s skill --search
+
+# === Model & Config ===
+agent-me models            # List available models
+agent-me config list       # List provider configs
+agent-me config set <id>   # Interactive API Key setup (hidden input)
+agent-me config test <id>  # Test connection
+
+# === Conversation ===
+agent-me conversations     # List all conversations
+agent-me export [id]       # Export conversation (Markdown)
+
+# === Search & Memory ===
+agent-me search "query"    # Web search
+agent-me memory "keyword"  # Search long-term memory
+
+# === Other ===
+agent-me tasks             # View task list
+agent-me status            # Check backend status
+agent-me logs -n 50        # View backend logs
+```
+
+### CLI Slash Commands
+
+Inside `agent-me chat`:
+
+| Command | Function |
+|---------|----------|
+| `/new [title]` | New conversation |
+| `/list` | List all conversations |
+| `/switch <ID>` | Switch to conversation |
+| `/model [name]` | View or switch model |
+| `/skill [name]` | View or switch skill mode |
+| `/search [query]` | Temporary web search |
+| `/file <path>` | Upload file |
+| `/clear` | Clear current conversation |
+| `/history` | Show conversation history |
+| `/info` | Show current session info |
+| `/export [ID]` | Export as Markdown |
+| `/help` | Show help |
+| `/quit` | Exit |
 
 ## Privacy
 
