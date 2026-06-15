@@ -15,6 +15,7 @@ _DEFAULT_URLS = {
     "anthropic": "https://api.anthropic.com/v1/messages",
     "gemini": "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
     "deepseek": "https://api.deepseek.com/v1/chat/completions",
+    "kimi": "https://api.moonshot.cn/v1/chat/completions",
 }
 
 
@@ -237,6 +238,7 @@ async def acompletion(model: str, messages: list, stream: bool = False,
             return _anthropic_stream(model_name, messages, tools, **kwargs)
         return await _anthropic_completion(model_name, messages, tools, **kwargs)
 
+    # Kimi Moonshot 原生兼容 OpenAI 格式，走统一 OpenAI 路径
     # OpenAI-compatible path (covers openai, deepseek, kimi, glm, doubao, minimax, custom, gemini)
     url = _get_url(provider, base_url)
     headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}

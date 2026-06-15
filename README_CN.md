@@ -169,6 +169,10 @@ agent-me ask "今天的科技新闻有哪些"  # 一次性问答
 
 ![Web 界面](docs/screenshot-web.png)                 ![CLI 界面](docs/screenshot-cli.png)
 
+**Windows 启动**                                    **Windows 停止**
+
+![启动脚本](docs/start-win.png)                    ![停止脚本](docs/stop-win.png)
+
 ## 功能清单
 
 | 功能 | 说明 |
@@ -281,7 +285,7 @@ agent-me/
 │       └── store.js          # Zustand 状态管理
 ├── cli/
 │   └── agent_me/main.py      # CLI 入口
-└── docs/                     # 文档截图
+└── docs/                     # 文档截图（Web/CLI/start/stop）
 ```
 
 ## CLI 命令参考

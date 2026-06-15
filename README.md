@@ -112,6 +112,16 @@ pip install -e .
 | **Dark Mode** | Auto-follow system / manual toggle |
 | **Token Savings** | History truncation + Anthropic prompt caching (90% cost reduction) |
 
+## Screenshots
+
+**Web UI**                                             **CLI**
+
+![Web UI](docs/screenshot-web.png)                  ![CLI](docs/screenshot-cli.png)
+
+**Windows start**                                    **Windows stop**
+
+![Start script](docs/start-win.png)                 ![Stop script](docs/stop-win.png)
+
 ## Auto Agent Mode
 
 No manual switching needed:
@@ -161,7 +171,7 @@ agent-me/
 │   ├── models/                # Pydantic models
 │   └── storage/               # SQLite, ChromaDB, config, uploads, logs
 ├── frontend/                  # React SPA
-└── cli/                       # CLI tool
+└── docs/                       # Screenshots (Web UI / CLI / start / stop)
 ```
 
 ## CLI Reference
