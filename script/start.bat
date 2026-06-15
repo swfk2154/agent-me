@@ -64,7 +64,7 @@ REM 运行日志输出到文件，不阻塞任何窗口
 set BE_LOG=%~dp0..\backend\storage\logs\backend.log
 if not exist "%~dp0..\backend\storage\logs" mkdir "%~dp0..\backend\storage\logs"
 
-start "" /B "C:/Program Files/Python310/pythonw.exe" -m uvicorn main:app --port 8000 --host 127.0.0.1 > "%BE_LOG%" 2>&1
+start "" /B python -m uvicorn main:app --port 8000 --host 127.0.0.1 > "%BE_LOG%" 2>&1
 
 REM 等后端就绪
 echo 等待后端就绪（首次启动约 15-20 秒）...
