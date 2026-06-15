@@ -148,10 +148,8 @@ def _get_allowed_roots() -> list[Path]:
     if env:
         _ALLOWED_READ_ROOTS = [Path(r).resolve() for r in env.split(os.pathsep) if r.strip()]
     else:
-        # 默认允许：当前工作目录、用户主目录、D: 盘（Windows 常用）
+        # 默认允许：当前工作目录、用户主目录
         _ALLOWED_READ_ROOTS = [Path.cwd().resolve(), Path.home().resolve()]
-        if os.name == "nt":
-            _ALLOWED_READ_ROOTS.append(Path("D:/").resolve())
     return _ALLOWED_READ_ROOTS
 
 
@@ -430,6 +428,7 @@ async def agent_loop_stream(
     profile: dict = None, max_iterations: int = 8,
     cancel_event: asyncio.Event = None,
     model_params: dict = None,
+    custom_prompt: str = "",
 ) -> AsyncGenerator[str, None]:
     """Agent 循环：支持并行工具调用、参数验证、超时控制、成本 ceiling"""
     if profile is None:
@@ -470,7 +469,7 @@ async def agent_loop_stream(
             if memories:
                 mem_context = "\n".join(memories)
 
-        system = _build_system_prompt(mem_context, profile, "", "", "")
+        system = _build_system_prompt(mem_context, profile, "", "", custom_prompt)
         full_msgs = [{"role": "system", "content": system}] + conversation
 
         try:

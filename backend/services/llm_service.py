@@ -1,5 +1,6 @@
 """LLM 统一调用封装 —— 含 token 预算截断 + Anthropic prompt caching"""
-import asyncio, json
+import asyncio, json, os
+from pathlib import Path
 from typing import AsyncGenerator, Optional
 from services.llm_client import completion, acompletion
 from app_config.encryption import ConfigEncryption
@@ -11,6 +12,9 @@ _encryption = ConfigEncryption(CONFIG_DIR)
 # Token 预算配置
 MAX_CONTEXT_CHARS = 32000   # 约 8k tokens (中文字符密度)
 MAX_HISTORY_MESSAGES = 20   # 最多保留的消息对数
+
+# SYSTEM_PROMPT.md 路径（项目根目录）
+SYSTEM_PROMPT_PATH = Path(__file__).resolve().parent.parent.parent / "SYSTEM_PROMPT.md"
 
 
 def _get_model_string(provider_key: str, model_name: str) -> str:
@@ -56,20 +60,40 @@ def _truncate_history(messages: list, max_chars: int = MAX_CONTEXT_CHARS,
 
 
 def _build_system_prompt(ctx: str, profile: dict, search: str, skill: str, custom: str) -> str:
-    parts = [custom or "你是 agent-me，一个智能个人助手。用中文交流，语气温暖、专业。"]
-    parts.append("\n【核心原则】真相优先、不编造、先理解再回答、范围控制、明确边界。")
-    parts.append("\n【回复规范】")
-    parts.append("- 回答简洁直接，除非用户要求详细解释")
-    parts.append("- 不添加不必要的前言/结语（如'答案是...'、'基于...'）")
-    parts.append("- 不使用 emoji，除非用户明确要求")
-    parts.append("- 代码修改后只做简要说明，不自动写总结段落")
-    parts.append("- 用户要求时才行动，不擅自扩展功能范围")
-    if profile.get("name"): parts.append(f"用户：{profile['name']}")
-    if profile.get("preferences"): parts.append(f"偏好：{'；'.join(profile['preferences'])}")
-    if search: parts.append(f"[联网搜索结果]\n{search}")
-    if ctx: parts.append(f"[历史记忆]\n{ctx}")
-    if skill: parts.append(skill)
-    return "\n\n".join(parts)
+    # 如果用户提供了自定义系统提示词，直接用
+    if custom:
+        base = custom
+    else:
+        # 尝试读取 SYSTEM_PROMPT.md 文件
+        try:
+            if SYSTEM_PROMPT_PATH.exists():
+                base = SYSTEM_PROMPT_PATH.read_text(encoding="utf-8").strip()
+            else:
+                base = ""
+        except Exception:
+            base = ""
+        # 文件不存在或读取失败时使用默认提示词
+        if not base:
+            parts = ["你是 agent-me，一个智能个人助手。用中文交流，语气温暖、专业。"]
+            parts.append("\n【核心原则】真相优先、不编造、先理解再回答、范围控制、明确边界。")
+            parts.append("\n【回复规范】")
+            parts.append("- 回答简洁直接，除非用户要求详细解释")
+            parts.append("- 不添加不必要的前言/结语（如'答案是...'、'基于...'）")
+            parts.append("- 不使用 emoji，除非用户明确要求")
+            parts.append("- 代码修改后只做简要说明，不自动写总结段落")
+            parts.append("- 用户要求时才行动，不擅自扩展功能范围")
+            base = "\n".join(parts)
+
+    # 动态注入上下文（放在提示词末尾）
+    extras = []
+    if profile.get("name"): extras.append(f"用户：{profile['name']}")
+    if profile.get("preferences"): extras.append(f"偏好：{'；'.join(profile['preferences'])}")
+    if search: extras.append(f"[联网搜索结果]\n{search}")
+    if ctx: extras.append(f"[历史记忆]\n{ctx}")
+    if skill: extras.append(skill)
+    if extras:
+        base = base + "\n\n" + "\n\n".join(extras)
+    return base
 
 
 def _supports_prompt_caching(provider_key: str, model: str) -> bool:
