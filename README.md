@@ -1,158 +1,260 @@
-# agent-me v3 — 通用个人 AI Agent
+# agent-me v3 — Universal Personal AI Agent
 
-TypeScript 重写的高性能个人 AI Agent：**Web + CLI 双模式**、**缓存感知上下文管理**（prompt-cache 命中率优化）、多 LLM 提供商、工具调用、长期记忆、沙箱化命令执行。单进程部署，核心零运行时依赖（Node ≥ 24 原生 TypeScript + `node:sqlite`）。
+A high-performance personal AI agent rewritten in TypeScript: **Web + CLI dual mode**, **cache-aware context management** (prompt-cache hit-rate optimization), multi-LLM providers, tool calling, long-term memory, and sandboxed command execution. Single-process deployment with a zero-runtime-dependency core (Node ≥ 24 native TypeScript + built-in `node:sqlite`).
 
-> 📖 **中英双语用户指南（含界面截图）**：见 [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md)
+> 🌐 中文版: [README_CN.md](README_CN.md)
 
-## 设计哲学
+---
 
-设计参考了主流 agent 架构（[deepseek-harness](https://github.com/deepseek-ai/deepseek-harness) / [grok-build](https://github.com/xai-org/grok-build)），并对标业界 agent 的设计差异分析（[六大 AI 编程智能体的本质差异](https://blogbu2154.site/ai-coding-agents-compare/)）：
+## Screenshots
 
-| 维度 | agent-me v3 的选择 |
-|------|-------------------|
-| 设计哲学 | 克制的 agent loop（Codex 减法）+ 按需扩展的技能/工具（Claude 加法） |
-| 安全哲学 | **两层模型**：沙箱档位（`read-only` / `workspace-write` / `danger-full-access`）× 审批策略（`untrusted` / `on-request` / `never`），风险前置、默认最小权限 |
-| 记忆持久化 | 仓库内 `AGENTS.md`（事实标准）+ 本地 SQLite 长期记忆 + 用户配置记忆 |
-| 自动化 | Headless 模式 `ask -p "…" --output-format json\|stream-json`，可直接接入 CI |
-| 架构 | 单一 TS 代码库，`core`（LLM/上下文/agent/工具/存储）被 CLI 与 Web 共享 |
+| CLI mode | Web mode |
+|:---:|:---:|
+| ![CLI](docs/screenshots/cli.png) | ![Web](docs/screenshots/web.png) |
 
-## 缓存命中率优化（核心特性）
+---
 
-Prompt caching 是 LLM 成本与延迟的关键。agent-me v3 把"缓存友好"做进上下文管理器（`src/core/context/manager.ts`）：
+## Features
 
-1. **稳定前缀**：system prompt 与工具 schema 字节级稳定（工具按名排序、序列化不变）；动态信息（时间等）永不进入 system，而是作为普通消息追加。
-2. **追加式消息日志**：历史消息只追加、绝不重写或重排，保证服务器端自动前缀缓存（DeepSeek / OpenAI）持续命中。
-3. **缓存感知压缩**：窗口超限时，最旧的对话被**单条摘要消息**替换（摘要冻结后不再变），截断点之后的消息原样保留——每次请求的前缀恒定：
-   `[system] [tools] [summary] [recent messages…]`
-4. **显式断点**（Anthropic）：按 token 间隔在消息上打 `cache_control: ephemeral`，长对话获得增量缓存命中。
-5. **命中率可观测**：每次请求读取 `prompt_cache_hit_tokens` / `cache_read_input_tokens`，CLI `/stats`、Web 统计面板、headless JSON 均可查看。
+| Feature | Description |
+|---------|-------------|
+| **Dual mode** | CLI (colorful interactive UI) + Web (browser UI with SSE streaming) sharing one core |
+| **Cache hit-rate optimization** | Stable prefix / append-only log / summary compaction / explicit breakpoints (details below) |
+| **Multi-LLM providers** | OpenAI / Anthropic / DeepSeek / Kimi / GLM / Doubao / MiniMax / Google / Ollama / Custom |
+| **Env-var auto-discovery** | Reuses conventional variables like `DEEPSEEK_API_KEY`, with Windows registry fallback — zero config |
+| **Tool calling** | Web search (free backends + auto fallback), page fetching, file read/write, code grep, command execution, long-term memory, ask-user |
+| **Reasoning display** | Real-time thinking streams from DeepSeek / OpenAI / Anthropic (gray text in CLI, collapsible block in Web) |
+| **Two-layer security** | Sandbox tiers (`read-only` / `workspace-write` / `danger-full-access`) × approval policies (`untrusted` / `on-request` / `never`) |
+| **Long-term memory** | Keyword retrieval with time decay; `AGENTS.md` project instructions injected |
+| **Headless mode** | `ask --output-format json\|stream-json` — script & CI friendly |
+| **Encrypted keys** | API keys stored with AES-256-GCM; key file separated from ciphertext |
 
-## 快速开始
+---
 
-### 环境
+## Installation (from clone to run)
 
-- Node.js ≥ 24（原生运行 TypeScript，无需编译；内置 `node:sqlite`）
-- npm（可选，仅构建 Web 前端时需要）
+### 1. Requirements
 
-### CLI 模式
+| Dependency | Version | Notes |
+|------------|---------|-------|
+| [Node.js](https://nodejs.org) | ≥ 24 | Runs TypeScript natively (no build step), built-in SQLite, fetch/SSE |
+| git | any | To clone the repository |
 
-```bash
-npm install              # 仅需一次（Web 构建依赖）
-node src/cli.ts chat     # 交互式聊天（彩色界面）
-```
+> Verify: `node --version` should print v24 or higher.
 
-配置模型提供商：
-
-```bash
-node src/cli.ts config list              # 查看配置
-node src/cli.ts config set deepseek      # 输入 API Key（隐藏输入、加密存储）
-node src/cli.ts config test deepseek     # 测试连接
-node src/cli.ts models                   # 列出所有提供商与模型
-```
-
-**环境变量自动复用**：无需手动配置——agent-me 会自动检测本机已有的惯例环境变量
-（加密存储优先，其次环境变量），并支持 `*_BASE_URL` 覆盖 API 地址（如国内中转站）：
-
-| Provider | 环境变量 |
-|----------|---------|
-| OpenAI | `OPENAI_API_KEY` / `OPENAI_BASE_URL` |
-| Anthropic | `ANTHROPIC_API_KEY` / `ANTHROPIC_BASE_URL` |
-| DeepSeek | `DEEPSEEK_API_KEY` / `DEEPSEEK_BASE_URL` |
-| Kimi | `MOONSHOT_API_KEY`（或 `KIMI_API_KEY`） |
-| Google | `GEMINI_API_KEY`（或 `GOOGLE_API_KEY`） |
-| GLM / 豆包 / MiniMax | `GLM_API_KEY` / `DOUBAO_API_KEY` / `MINIMAX_API_KEY` |
-| 自定义 | `AGENT_ME_API_KEY` / `AGENT_ME_BASE_URL` |
-
-`agent-me providers` 会显示每个提供商 Key 的来源（加密存储 / 环境变量 / 未配置）。
-
-一次性提问 / CI：
+### 2. Clone the repository
 
 ```bash
-node src/cli.ts ask "搜索一下 TypeScript 的性能" --output-format json
-node src/cli.ts ask "现在几点了？" --output-format stream-json   # 事件流
+git clone https://github.com/swfk2154/agent-me.git
+cd agent-me
 ```
 
-### Web 模式
+### 3. Install dependencies
 
 ```bash
-npm run build:web        # 构建前端（web/dist）
-node src/cli.ts serve    # 打开 http://127.0.0.1:8080
+npm install
 ```
 
-Web 界面包含：流式回复、思考过程折叠显示、工具调用卡片（参数/结果）、缓存命中率面板、对话历史、设置（提供商/模型/搜索后端）。
+> In China: npm usually already uses a mirror (registry.npmmirror.com); if not,
+> run `npm config set registry https://registry.npmmirror.com`.
 
-### 安全选项
+### 4. Configure an API key (pick one)
+
+**Option A — Environment variable (recommended)**:
+
+```powershell
+# Windows (current session)
+$env:DEEPSEEK_API_KEY = "sk-your-key"
+# Permanent
+setx DEEPSEEK_API_KEY "sk-your-key"
+```
 
 ```bash
-node src/cli.ts chat --sandbox read-only              # 只读沙箱
-node src/cli.ts chat --sandbox workspace-write        # 默认：仅工作区可写
-node src/cli.ts chat --approval never                 # 不询问（YOLO，危险命令仍拒绝）
+# macOS / Linux
+export DEEPSEEK_API_KEY="sk-your-key"   # add to ~/.bashrc or ~/.zshrc
 ```
 
-| 沙箱档位 | 能碰哪里 |
-|---------|---------|
-| `read-only` | 文件系统只读，仅允许只读命令 |
-| `workspace-write` | 工作区内读写（默认） |
-| `danger-full-access` | 不限制文件系统 |
+**Option B — Encrypted store**: run `node src/cli.ts config set deepseek` and type the key (hidden input).
 
-## 内置工具
+**Option C — Windows registry fallback**: user-level environment variables are auto-detected from any environment.
 
-| 工具 | 说明 |
-|------|------|
-| `web_search` | 联网搜索：DuckDuckGo / Bing（免费）→ Tavily / Brave（可选 Key），自动回退 |
-| `fetch_url` | 读取网页正文（Jina Reader，免费无 Key） |
-| `get_current_time` | 当前日期时间 |
-| `read_file` / `write_file` / `list_directory` / `grep_files` | 工作区文件操作（路径越界防护） |
-| `run_command` | shell 命令执行（沙箱 + 审批 + 危险命令拒绝 + 超时） |
-| `search_memory` / `add_memory` | 长期记忆（关键词评分 + 30 天半衰期衰减） |
-| `ask_user` | 向用户提问（CLI stdin / Web SSE 挂起） |
+Verify:
 
-新增工具 = 一个 `register()` 调用（`src/core/tools/`）。
+```bash
+node src/cli.ts providers              # key status per provider (env / store / missing)
+node src/cli.ts config test deepseek   # real connectivity test
+```
 
-## 架构
+### 5. Start the CLI mode
+
+```bash
+node src/cli.ts chat
+```
+
+Or double-click `script\start-cli.bat` (Windows).
+
+### 6. Start the Web mode
+
+```bash
+npm run build:web          # build the frontend once (not needed afterwards)
+node src/cli.ts serve      # open http://127.0.0.1:8080 in your browser
+```
+
+Or double-click `script\start-web.bat` (Windows; auto-builds the frontend).
+
+### 7. Common startup issues
+
+| Issue | Fix |
+|-------|-----|
+| `EADDRINUSE: port 8080 in use` | An agent-me instance may already be running — just open http://127.0.0.1:8080; or use another port: `node src/cli.ts serve --port 8081` |
+| `API key not configured` | Set the environment variable or run `node src/cli.ts config set <provider>` |
+
+### 8. Updating
+
+```bash
+git pull
+npm install
+npm run build:web    # only when the frontend changed
+```
+
+---
+
+## CLI usage
+
+```bash
+node src/cli.ts chat        # interactive chat (slash commands below)
+node src/cli.ts ask "question" [--output-format text|json|stream-json] [-f file] [--conversation-id ID]
+node src/cli.ts serve [--port 8080]
+node src/cli.ts models      # all providers & models
+node src/cli.ts providers   # key status
+node src/cli.ts config list|set|test|provider|model
+node src/cli.ts stats       # cache hit-rate stats
+node src/cli.ts memory search|add|list
+node src/cli.ts --help
+```
+
+**Slash commands**: `/new` new conversation · `/model` switch model · `/provider` switch provider · `/stats` cache stats · `/history` recent messages · `/help` · `/quit`
+
+**UI elements**: gray text = thinking/reasoning; `⚙️` = tool call; `[in N tok · cache 命中 X%]` = per-request cache hit rate (≥70% green / ≥30% yellow / otherwise red).
+
+**Security flags**:
+
+```bash
+node src/cli.ts chat --sandbox read-only              # read-only
+node src/cli.ts chat --sandbox workspace-write        # default
+node src/cli.ts chat --approval never                 # never ask (dangerous commands still refused)
+```
+
+---
+
+## Web usage
+
+After starting, open http://127.0.0.1:8080:
+
+- **Left sidebar**: new conversation, history list, **cache hit-rate panel** (rate / requests / hit tokens; ≥70% highlighted green)
+- **Center chat**: streaming replies (`▊` cursor), collapsible thinking blocks (yellow border), tool-call cards (⚙ args/result, red on failure), ■ stop button
+- **Settings drawer** (⚙): provider / model / search backend (DuckDuckGo·Bing free, Tavily·Brave need a key) / context window / cache-compaction toggle
+
+**REST API**: `GET /api/health` · `POST /api/chat` (SSE stream: delta/thinking/tool_call/tool_result/usage/done/ask) · `GET/PUT /api/config` · `GET /api/stats` · `GET/DELETE /api/conversations[/:id]` · `POST /api/answer`
+
+---
+
+## Cache hit-rate optimization (core feature)
+
+Prompt caching is the key to LLM cost and latency. agent-me builds cache-friendliness into the context manager (`src/core/context/manager.ts`):
+
+1. **Stable prefix** — the system prompt and tool schema are byte-identical (tools sorted by name); dynamic data (time, etc.) never enters the system prompt;
+2. **Append-only log** — history is only ever appended, never rewritten or reordered, so automatic prefix caching (DeepSeek/OpenAI) keeps hitting;
+3. **Cache-aware compaction** — when the window overflows, the oldest messages are replaced by **one frozen summary**; everything after the trim point stays untouched. Every request starts with a constant prefix: `[system] [tools] [summary] [recent…]`;
+4. **Explicit breakpoints** (Anthropic) — `cache_control: ephemeral` at token intervals for incremental hits on long conversations;
+5. **Observable hit rate** — CLI `/stats`, Web panel, and headless JSON all report it.
+
+---
+
+## Environment variables
+
+| Provider | API key variable | Base-URL override |
+|----------|------------------|-------------------|
+| OpenAI | `OPENAI_API_KEY` | `OPENAI_BASE_URL` |
+| Anthropic | `ANTHROPIC_API_KEY` | `ANTHROPIC_BASE_URL` |
+| DeepSeek | `DEEPSEEK_API_KEY` | `DEEPSEEK_BASE_URL` |
+| Kimi | `MOONSHOT_API_KEY` / `KIMI_API_KEY` | `MOONSHOT_BASE_URL` |
+| Google | `GEMINI_API_KEY` / `GOOGLE_API_KEY` | `GEMINI_BASE_URL` |
+| GLM | `GLM_API_KEY` / `ZHIPU_API_KEY` | `GLM_BASE_URL` |
+| Doubao | `DOUBAO_API_KEY` / `ARK_API_KEY` | `DOUBAO_BASE_URL` |
+| MiniMax | `MINIMAX_API_KEY` | `MINIMAX_BASE_URL` |
+| Custom | `AGENT_ME_API_KEY` | `AGENT_ME_BASE_URL` |
+
+---
+
+## Security model
+
+| Flag | Values | Meaning |
+|------|--------|---------|
+| `--sandbox` | `read-only` / `workspace-write` / `danger-full-access` | Where the agent may touch |
+| `--approval` | `untrusted` / `on-request` / `never` | When it asks the user |
+
+Default: `workspace-write` + `on-request`. Destructive commands (recursive delete, format, system modification, …) are always refused at every tier. File tools are confined to the workspace root (symlink-escape protection).
+
+---
+
+## Project structure
 
 ```
 src/
-├── cli.ts                 # CLI 入口（chat / ask / serve / config / stats / memory）
-├── server.ts              # Web 入口（hono + SSE + 静态前端托管）
-├── runtime.ts             # CLI 与 Web 共享的组装层（wiring）
+├── cli.ts                 # CLI entry (chat / ask / serve / config / stats / memory)
+├── server.ts              # Web entry (hono + SSE + static frontend hosting)
+├── runtime.ts             # shared wiring for CLI & Web
 └── core/
-    ├── config.ts          # 配置 + AES-256-GCM 密钥加密
-    ├── llm/               # LLM 抽象：OpenAI 兼容 + Anthropic（缓存头/thinking）
-    ├── context/           # ★ 缓存感知上下文管理 + token 估算
-    ├── agent/             # agent 主循环（工具调用、熔断、中断）
-    ├── tools/             # 工具注册表 + 实现（含安全模型）
-    ├── store/             # SQLite（node:sqlite，零依赖）
-    ├── memory/            # 长期记忆
-    └── prompts/           # system prompt（AGENTS.md 注入）
-web/                       # React + Vite 前端（构建后由 server 托管）
-tests/                     # mock LLM + 端到端测试
+    ├── config.ts          # config + key encryption + env-var discovery
+    ├── llm/               # OpenAI-compatible + Anthropic (cache headers/thinking)
+    ├── context/           # ★ cache-aware context management
+    ├── agent/             # agent loop (tool calls, fuse, abort)
+    ├── tools/             # tool registry + implementations (security model)
+    ├── store/             # SQLite (node:sqlite, zero deps)
+    ├── memory/            # long-term memory
+    └── prompts/           # system prompt (AGENTS.md injection)
+web/                       # React + Vite frontend (served by the server after build)
+script/                    # Windows double-click launchers
+tests/                     # mock LLM + end-to-end tests
+legacy/                    # v2.2 (Python + React), kept for reference
 ```
 
-## 开发
+## Development
 
 ```bash
 npm run typecheck     # tsc --noEmit
-npm test              # node --test tests/（内置 mock LLM server，无需真实 Key）
-npm run dev:web       # Vite dev server（代理 /api → 8080）
-npm run build:web     # 构建前端
+npm test              # end-to-end tests (built-in mock LLM, no real key needed)
+npm run dev:web       # Vite dev server (proxies /api → 8080)
+npm run build:web     # build the frontend
 ```
 
-## 数据与隐私
+## Data & privacy
 
-- 数据目录：`~/.agent-me/`（可用 `AGENT_ME_HOME` 覆盖）
-- API Key：AES-256-GCM 加密存储（`keyfile.key` 与 `secrets.enc` 分离）
-- 对话/记忆：本地 SQLite，不离开你的机器
+- Data directory: `~/.agent-me/` (override with `AGENT_ME_HOME`)
+- API keys: AES-256-GCM encrypted; key file separate from ciphertext
+- Conversations/memory: local SQLite — nothing leaves your machine
+
+## FAQ
+
+**Q: Which models are supported?** Any OpenAI-compatible API (DeepSeek/Kimi/GLM/Doubao/MiniMax/Google/Ollama/custom gateways) plus native Anthropic. Run `node src/cli.ts models`.
+
+**Q: How do I add a tool?** Create a file under `src/core/tools/` and `registry.register({ name, description, parameters, handler })` — one call.
+
+**Q: Cache hit rate is low — why?** Make sure you never inject dynamic content into the system prompt (it must stay byte-identical); long conversations are auto-compacted with summaries; watch trends via `/stats`.
+
+**Q: What happened to v2.2?** It moved to `legacy/`; git history is fully preserved.
 
 ## Changelog
 
-### v3.0.0（2026-08）
+### v3.0.0 (2026-08)
 
-- TypeScript 全量重写（原 v2.2 Python/React 移至 `legacy/`）
-- 缓存感知上下文管理（稳定前缀 / 追加式日志 / 摘要压缩 / 显式断点 / 命中率统计）
-- 安全两层模型（沙箱 × 审批）
-- Web + CLI 双模式共享 core
-- reasoning/thinking 流解析（DeepSeek / OpenAI / Anthropic）
-- 联网搜索多后端 + fetch_url 读网页
-- Headless JSON / stream-json 输出
-- 内置 mock LLM 的端到端测试
+- Full TypeScript rewrite (the Python/React version moved to `legacy/`)
+- Cache-aware context management (stable prefix / append-only log / summary compaction / explicit breakpoints / hit-rate stats)
+- Two-layer security model (sandbox × approval)
+- Web + CLI dual mode sharing one core
+- Reasoning/thinking stream parsing (DeepSeek / OpenAI / Anthropic)
+- Multi-backend web search + fetch_url page reading
+- Env-var auto-discovery (incl. Windows registry fallback)
+- Headless JSON / stream-json output
+- End-to-end tests against a built-in mock LLM
