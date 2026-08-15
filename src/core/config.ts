@@ -3,6 +3,7 @@
  * API key storage (AES-256-GCM, key file separate from ciphertext).
  */
 import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
+import { execFileSync } from "node:child_process";
 import { mkdir, readFile, writeFile, rename } from "node:fs/promises";
 import { homedir } from "node:os";
 import path from "node:path";
@@ -162,8 +163,38 @@ export function apiKeyFromEnv(providerId: string): string | undefined {
   for (const name of mapping.keys) {
     const v = process.env[name];
     if (v && v.trim()) return v.trim();
+    // Windows fallback: the process may be launched from a sandboxed/limited
+    // environment (e.g. an agent harness) that does not inherit the user's
+    // registry environment variables. Read the user-level registry env
+    // directly so the key is still discovered. Cached per variable.
+    const reg = readUserEnvWindows(name);
+    if (reg) return reg;
   }
   return undefined;
+}
+
+// Cache of HKCU\Environment values read once per variable name.
+const registryEnvCache = new Map<string, string | undefined>();
+
+/** Read a user-level environment variable from the Windows registry. */
+function readUserEnvWindows(name: string): string | undefined {
+  if (process.platform !== "win32") return undefined;
+  if (registryEnvCache.has(name)) return registryEnvCache.get(name);
+  let value: string | undefined;
+  try {
+    const out = execFileSync("reg", ["query", "HKCU\\Environment", "/v", name], {
+      encoding: "utf8",
+      windowsHide: true,
+      timeout: 3000,
+      stdio: ["ignore", "pipe", "ignore"],
+    });
+    const m = /REG_\w+\s+(.+)$/m.exec(out);
+    value = m?.[1]?.trim() ?? undefined;
+  } catch {
+    value = undefined;
+  }
+  registryEnvCache.set(name, value);
+  return value;
 }
 
 /** Find a base-URL override in the environment for a provider id. */
