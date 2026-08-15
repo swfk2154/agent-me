@@ -199,6 +199,18 @@ export async function startServer(runtime: Runtime, opts: ServerOptions): Promis
   }
 
   const server = serve({ fetch: app.fetch, port: opts.port, hostname: opts.host ?? "127.0.0.1" });
+  server.on?.("error", (err: Error & { code?: string }) => {
+    if (err.code === "EADDRINUSE") {
+      console.error(
+        `\n❌ 端口 ${opts.port} 已被占用。\n` +
+          `  可能已有 agent-me 在运行 → 直接打开 http://127.0.0.1:${opts.port} 即可。\n` +
+          `  或换端口启动: node src/cli.ts serve --port ${opts.port + 1}`,
+      );
+      process.exit(1);
+    }
+    console.error(`❌ Web 服务启动失败: ${err.message}`);
+    process.exit(1);
+  });
   console.log(`agent-me Web 模式: http://${opts.host ?? "127.0.0.1"}:${opts.port}`);
   console.log(`数据目录: ${runtime.paths.root}`);
   await new Promise<void>((resolve) => {
