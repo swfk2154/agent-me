@@ -1,0 +1,32 @@
+{
+  "name": "agent-me",
+  "version": "3.0.0",
+  "description": "Universal personal AI agent — Web + CLI dual mode, cache-aware context management (agent-me v3)",
+  "type": "module",
+  "bin": {
+    "agent-me": "src/cli.ts"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "node --test tests/e2e.mjs",
+    "dev:web": "vite --config web/vite.config.ts",
+    "build:web": "vite build --config web/vite.config.ts",
+    "serve": "node src/server.ts",
+    "start": "node src/cli.ts"
+  },
+  "dependencies": {
+    "@hono/node-server": "^2.1.1",
+    "hono": "^4.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "typescript": "^5.7.0",
+    "vite": "^6.0.0"
+  }
+}

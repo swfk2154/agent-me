@@ -1,0 +1,22 @@
+# Data & secrets
+data/
+*.db
+*.db-shm
+*.db-wal
+keyfile.key
+secrets.enc
+config.json
+.env
+*.log
+
+# Node
+node_modules/
+web/dist/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.idea/
+.vscode/
