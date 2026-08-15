@@ -127,6 +127,62 @@ export function resolveModel(cfg: Config, p: Provider): string {
 }
 
 // ---------------------------------------------------------------------------
+// Environment-variable discovery (industry conventions)
+// ---------------------------------------------------------------------------
+
+interface EnvMapping {
+  /** Env var names tried in order for the API key. */
+  keys: string[];
+  /** Optional env vars that override the provider's base URL. */
+  baseUrls?: string[];
+}
+
+/**
+ * Mapping from provider id to conventional environment variables.
+ * This lets agent-me reuse keys already present on the host (e.g. from
+ * OpenAI / Claude Code / other tools) with zero configuration.
+ */
+export const ENV_KEY_MAPPINGS: Record<string, EnvMapping> = {
+  openai: { keys: ["OPENAI_API_KEY"], baseUrls: ["OPENAI_BASE_URL"] },
+  anthropic: { keys: ["ANTHROPIC_API_KEY"], baseUrls: ["ANTHROPIC_BASE_URL"] },
+  google: { keys: ["GEMINI_API_KEY", "GOOGLE_API_KEY"], baseUrls: ["GEMINI_BASE_URL", "GOOGLE_GENERATIVE_AI_BASE_URL"] },
+  deepseek: { keys: ["DEEPSEEK_API_KEY"], baseUrls: ["DEEPSEEK_BASE_URL"] },
+  kimi: { keys: ["MOONSHOT_API_KEY", "KIMI_API_KEY"], baseUrls: ["MOONSHOT_BASE_URL"] },
+  minimax: { keys: ["MINIMAX_API_KEY"], baseUrls: ["MINIMAX_BASE_URL"] },
+  glm: { keys: ["GLM_API_KEY", "ZHIPU_API_KEY"], baseUrls: ["GLM_BASE_URL"] },
+  doubao: { keys: ["DOUBAO_API_KEY", "ARK_API_KEY"], baseUrls: ["DOUBAO_BASE_URL"] },
+  ollama: { keys: [] },
+  custom: { keys: ["AGENT_ME_API_KEY", "CUSTOM_API_KEY"], baseUrls: ["AGENT_ME_BASE_URL"] },
+};
+
+/** Find an API key in the environment for a provider id (first match wins). */
+export function apiKeyFromEnv(providerId: string): string | undefined {
+  const mapping = ENV_KEY_MAPPINGS[providerId];
+  if (!mapping) return undefined;
+  for (const name of mapping.keys) {
+    const v = process.env[name];
+    if (v && v.trim()) return v.trim();
+  }
+  return undefined;
+}
+
+/** Find a base-URL override in the environment for a provider id. */
+export function baseUrlFromEnv(providerId: string): string | undefined {
+  const mapping = ENV_KEY_MAPPINGS[providerId];
+  if (!mapping?.baseUrls) return undefined;
+  for (const name of mapping.baseUrls) {
+    const v = process.env[name];
+    if (v && v.trim()) return v.trim();
+  }
+  return undefined;
+}
+
+/** All env var names that can provide a key, for help text. */
+export function envVarNames(providerId: string): string[] {
+  return ENV_KEY_MAPPINGS[providerId]?.keys ?? [];
+}
+
+// ---------------------------------------------------------------------------
 // User config
 // ---------------------------------------------------------------------------
 

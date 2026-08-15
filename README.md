@@ -48,6 +48,21 @@ node src/cli.ts config test deepseek     # 测试连接
 node src/cli.ts models                   # 列出所有提供商与模型
 ```
 
+**环境变量自动复用**：无需手动配置——agent-me 会自动检测本机已有的惯例环境变量
+（加密存储优先，其次环境变量），并支持 `*_BASE_URL` 覆盖 API 地址（如国内中转站）：
+
+| Provider | 环境变量 |
+|----------|---------|
+| OpenAI | `OPENAI_API_KEY` / `OPENAI_BASE_URL` |
+| Anthropic | `ANTHROPIC_API_KEY` / `ANTHROPIC_BASE_URL` |
+| DeepSeek | `DEEPSEEK_API_KEY` / `DEEPSEEK_BASE_URL` |
+| Kimi | `MOONSHOT_API_KEY`（或 `KIMI_API_KEY`） |
+| Google | `GEMINI_API_KEY`（或 `GOOGLE_API_KEY`） |
+| GLM / 豆包 / MiniMax | `GLM_API_KEY` / `DOUBAO_API_KEY` / `MINIMAX_API_KEY` |
+| 自定义 | `AGENT_ME_API_KEY` / `AGENT_ME_BASE_URL` |
+
+`agent-me providers` 会显示每个提供商 Key 的来源（加密存储 / 环境变量 / 未配置）。
+
 一次性提问 / CI：
 
 ```bash

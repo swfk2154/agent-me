@@ -5,7 +5,7 @@
  */
 import { randomUUID } from "node:crypto";
 import type { Paths, Config, Provider } from "./core/config.ts";
-import { loadConfig, defaultPaths, providerById, SecretBox, resolveModel } from "./core/config.ts";
+import { loadConfig, defaultPaths, providerById, SecretBox, resolveModel, apiKeyFromEnv, baseUrlFromEnv, envVarNames } from "./core/config.ts";
 import { Store } from "./core/store/db.ts";
 import { MemoryStore } from "./core/memory/store.ts";
 import { ToolRegistry, registerBuiltinTools } from "./core/tools/registry.ts";
@@ -71,18 +71,41 @@ export class Runtime {
   }
 
   /**
-   * Resolve the active provider + api key. Throws with actionable message if missing.
+   * Resolve any provider's effective config + api key.
+   *
+   * Key resolution order: encrypted store → environment variable
+   * (conventional names like DEEPSEEK_API_KEY) → none.
+   * Base URL order: environment override (*_BASE_URL) → provider default.
    */
-  async activeProvider(): Promise<{ provider: Provider; apiKey: string }> {
-    const p = providerById(this.config.activeProvider, this.config);
-    if (!p) throw new Error(`未知 provider: ${this.config.activeProvider}`);
-    const key = await this.secrets.get(`key:${p.id}`);
-    if (!key && p.id !== "ollama") {
+  async resolveProvider(id: string): Promise<{ provider: Provider; apiKey: string; keySource: "store" | "env" | "none" }> {
+    const p = providerById(id, this.config);
+    if (!p) throw new Error(`未知 provider: ${id}`);
+
+    let apiKey = await this.secrets.get(`key:${id}`);
+    let keySource: "store" | "env" | "none" = "store";
+    if (!apiKey) {
+      apiKey = apiKeyFromEnv(id);
+      keySource = apiKey ? "env" : "none";
+    }
+
+    // Base URL: env override wins over config/provider default.
+    const envBase = baseUrlFromEnv(id);
+    const provider = envBase ? { ...p, baseUrl: envBase } : p;
+    return { provider, apiKey: apiKey ?? "", keySource };
+  }
+
+  /** Resolve the active provider, throwing an actionable error if no key. */
+  async activeProvider(): Promise<{ provider: Provider; apiKey: string; keySource: "store" | "env" | "none" }> {
+    const resolved = await this.resolveProvider(this.config.activeProvider);
+    if (!resolved.apiKey && resolved.provider.id !== "ollama") {
+      const envNames = envVarNames(resolved.provider.id);
+      const hint = envNames.length > 0 ? `，或设置环境变量 ${envNames.join(" / ")}` : "";
       throw new Error(
-        `未配置 ${p.name} 的 API Key。请运行: agent-me config set ${p.id}（或访问 ${p.apiKeyUrl ?? "官网"} 获取）`,
+        `未配置 ${resolved.provider.name} 的 API Key。请运行: agent-me config set ${resolved.provider.id}${hint}` +
+          (resolved.provider.apiKeyUrl ? `（或访问 ${resolved.provider.apiKeyUrl} 获取）` : ""),
       );
     }
-    return { provider: p, apiKey: key ?? "" };
+    return resolved;
   }
 
   /**

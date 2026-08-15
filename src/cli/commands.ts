@@ -5,7 +5,7 @@
 import { createInterface } from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
 import type { Runtime } from "../runtime.ts";
-import { providerById, providerIds, saveConfig, BUILTIN_PROVIDERS } from "../core/config.ts";
+import { providerById, providerIds, saveConfig, BUILTIN_PROVIDERS, envVarNames } from "../core/config.ts";
 
 export async function cmdModels(runtime: Runtime): Promise<void> {
   const active = runtime.config.activeProvider;
@@ -19,13 +19,24 @@ export async function cmdModels(runtime: Runtime): Promise<void> {
 }
 
 export async function cmdProviders(runtime: Runtime): Promise<void> {
+  const color = (code: string, s: string) => (process.stdout.isTTY ? `\x1b[${code}m${s}\x1b[0m` : s);
   for (const id of providerIds()) {
     const p = providerById(id, runtime.config);
     if (!p) continue;
-    const key = await runtime.secrets.get(`key:${id}`);
-    const status = key ? "已配置 Key" : "未配置 Key";
+    let status: string;
+    try {
+      const { keySource } = await runtime.resolveProvider(id);
+      if (keySource === "store") status = color("32", "已配置 (加密存储)");
+      else if (keySource === "env") {
+        const envName = envVarNames(id).find((n) => process.env[n]) ?? "?";
+        status = color("36", `环境变量 ${envName}`);
+      } else status = color("90", "未配置");
+    } catch {
+      status = color("90", "未知");
+    }
     const active = runtime.config.activeProvider === id ? " ← 激活" : "";
-    console.log(`${id.padEnd(12)} ${status.padEnd(12)} ${p.baseUrl}${active}`);
+    const base = p.baseUrl ? ` ${p.baseUrl}` : "";
+    console.log(`${id.padEnd(12)} ${status}${base}${active}`);
   }
 }
 
@@ -45,9 +56,15 @@ export async function cmdConfigSet(runtime: Runtime, providerId: string): Promis
     console.error(`未知 provider: ${providerId}（可用: ${providerIds().join(", ")}）`);
     return;
   }
+  // If already resolvable via env, let the user skip (or override).
+  const envKey = envVarNames(providerId).find((n) => process.env[n]);
   const rl = createInterface({ input, output, terminal: true });
-  // Read with a simple hidden-input mode (raw mode, no echo).
-  process.stdout.write(`请输入 ${p.name} 的 API Key（输入将隐藏）:\n`);
+  if (envKey) {
+    console.log(`✓ 已检测到环境变量 ${envKey}，agent-me 会自动复用。`);
+    console.log(`  直接回车跳过；如需覆盖，请输入新的 API Key:`);
+  } else {
+    console.log(`请输入 ${p.name} 的 API Key（输入将隐藏）:`);
+  }
   const key = await readHidden(rl);
   if (key.trim()) {
     await runtime.secrets.set(`key:${providerId}`, key.trim());
@@ -100,22 +117,24 @@ async function readHidden(rl: ReturnType<typeof createInterface>): Promise<strin
 }
 
 export async function cmdConfigTest(runtime: Runtime, providerId: string): Promise<void> {
-  const p = providerById(providerId, runtime.config);
-  if (!p) {
-    console.error(`未知 provider: ${providerId}`);
+  let resolved;
+  try {
+    resolved = await runtime.resolveProvider(providerId);
+  } catch (err) {
+    console.error(`❌ ${(err as Error).message}`);
     return;
   }
-  const key = await runtime.secrets.get(`key:${providerId}`);
-  if (!key) {
-    console.error(`未配置 ${p.name} 的 API Key，先运行: agent-me config set ${providerId}`);
+  const { provider, apiKey, keySource } = resolved;
+  if (!apiKey) {
+    console.error(`未配置 ${provider.name} 的 API Key。可设置环境变量 ${envVarNames(providerId).join(" / ") || "(无)"} 或运行: agent-me config set ${providerId}`);
     return;
   }
-  console.log(`测试 ${p.name} (${p.baseUrl}) ...`);
+  console.log(`测试 ${provider.name} (${provider.baseUrl}) · Key 来源: ${keySource === "env" ? "环境变量" : "加密存储"} ...`);
   try {
     const { createProvider } = await import("../core/llm/index.ts");
-    const provider = createProvider({ provider: p, apiKey: key });
-    const model = p.models[0] ?? "default";
-    const res = await provider.complete({
+    const providerImpl = createProvider({ provider, apiKey });
+    const model = provider.models[0] ?? "default";
+    const res = await providerImpl.complete({
       model,
       messages: [{ role: "user", content: "ping，请只回复 pong" }],
       maxTokens: 16,
