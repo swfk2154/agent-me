@@ -2,6 +2,8 @@
 
 TypeScript 重写的高性能个人 AI Agent：**Web + CLI 双模式**、**缓存感知上下文管理**（prompt-cache 命中率优化）、多 LLM 提供商、工具调用、长期记忆、沙箱化命令执行。单进程部署，核心零运行时依赖（Node ≥ 24 原生 TypeScript + `node:sqlite`）。
 
+> 📖 **中英双语用户指南（含界面截图）**：见 [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md)
+
 ## 设计哲学
 
 设计参考了主流 agent 架构（[deepseek-harness](https://github.com/deepseek-ai/deepseek-harness) / [grok-build](https://github.com/xai-org/grok-build)），并对标业界 agent 的设计差异分析（[六大 AI 编程智能体的本质差异](https://blogbu2154.site/ai-coding-agents-compare/)）：
